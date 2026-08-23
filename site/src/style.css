@@ -140,6 +140,24 @@ a:focus-visible {
 #context { margin-top: 40px; }
 #context p { font-size: 0.95rem; color: var(--ink-soft); max-width: 38rem; }
 
+/* --- baby names (#19) + events (#40) --- */
+#names, #events, #people { margin-top: 40px; }
+#names p, #events li { max-width: 38rem; }
+#events ul { list-style: none; padding-left: 0; }
+#events li { margin-top: 8px; }
+.reg-note { font-size: 0.85rem; color: var(--ink-soft); }
+
+/* --- ⓘ info links (#42): soft, smaller than the heading, gold on hover --- */
+.info {
+  font-size: 0.9em;
+  font-weight: 400;
+  color: var(--ink-soft);
+  text-decoration: none;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.info:hover { color: var(--gold); }
+
 /* --- dot field --- */
 #dotfield-section { margin-top: 40px; }
 #dotfield { width: 100%; display: block; }

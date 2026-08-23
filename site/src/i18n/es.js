@@ -106,7 +106,22 @@ export default {
 
   peopleHeading: 'En tu compañía',
   peopleBrought: (y, listHtml) => `${y} también trajo a ${listHtml}.`,
-  peopleNote: 'Ordenados por número de ediciones lingüísticas de Wikipedia — una medida de fama entre muchas.',
+  peopleNote: 'Ordenados por presencia en Wikipedia, alternando mujeres y hombres — una medida de fama entre muchas. Los nombres enlazan a Wikipedia.',
+
+  eventsHeading: 'El año en sí',
+  eventsLink: '→ Wikipedia',
+
+  namesHeading: 'Los nombres de tu año',
+  namesLine: (inPlace, yearPhrase, f0, m0) => `Los bebés nacidos ${inPlace} ${yearPhrase}
+      recibieron con más frecuencia los nombres ${f0} y ${m0}.`,
+  namesYearPhrase: (y) => `en ${y}`,
+  namesDecadePhrase: (d) => `en los años ${d}`,
+  namesAlso: (fs, ms) => `También comunes: ${fs.join(', ')} · ${ms.join(', ')}.`,
+  namesRegNote: '(por año de registro)',
+  namesAttribution: (source, url, license) => `Nombres: <a href="${url}">${source}</a> (${license}).`,
+
+  infoTitle: 'Cómo lo contamos',
+  footerGitHub: 'Código en GitHub',
 
   viewAsTable: 'Ver como tabla',
   dotTableCaption: (place) => `Personas vivas a mediados de 2026 por año de nacimiento — ${place}`,

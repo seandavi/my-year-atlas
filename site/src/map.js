@@ -4,6 +4,7 @@
 // same hyparquet chunk the trajectory uses. Company framing (§9): the map
 // answers "where is your company", never loss.
 import { t, iso2Of } from './i18n/index.js';
+import { infoLink } from './sections.js';
 
 // Powers-of-ten bins, not a linear ramp: per-year country cohorts span ~4
 // people (Holy See) to 20M+ (India), so linear would leave the map two
@@ -68,7 +69,7 @@ export function renderMap(el, geo, rows, year, yearText, userIso3) {
 
   if (!el.dataset.built) {
     el.dataset.built = '1';
-    el.innerHTML = `<h2>${t.mapHeading}</h2>
+    el.innerHTML = `<h2>${t.mapHeading} ${infoLink('map')}</h2>
       <svg class="mapviz" viewBox="${geo.viewBox}" role="img"></svg>
       <p class="map-legend" aria-hidden="true"></p>
       <p class="caption"></p>
