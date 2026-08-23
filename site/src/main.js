@@ -229,7 +229,7 @@ function renderAnswer() {
   renderNames(state.year, state.iso3); // async; needs country + coverage
   if (!state.year) {
     el.innerHTML = `<p class="invite">${t.invite}</p>`;
-    $('share-actions').hidden = true;
+    $('share').hidden = true;
     $('details').hidden = true;
     // ilse P2-1: the empty state IS the product — the world field, no column lit
     if (world) {
@@ -310,7 +310,7 @@ function renderAnswer() {
   }
   el.innerHTML = parts.join('');
 
-  $('share-actions').hidden = false;
+  $('share').hidden = false;
   $('dotfield-section').hidden = false;
   renderDotField($('dotfield'), $('dotfield-caption'), rows, y,
     state.iso3 ? placeName() : t.theWorld);
@@ -615,7 +615,9 @@ function applyStatic() {
   $('year-up').setAttribute('aria-label', t.nextYear);
   document.querySelector('label[for="country"]').innerHTML = t.countryLabelHtml;
   $('country').placeholder = t.countryPlaceholder;
-  $('share').textContent = navigator.canShare ? t.shareBtnShare : t.shareBtnDownload;
+  const shareLabel = navigator.canShare ? t.shareBtnShare : t.shareBtnDownload;
+  $('share').setAttribute('aria-label', shareLabel);
+  $('share').setAttribute('title', shareLabel);
   $('foot-projection').innerHTML = t.footerProjection;
   $('foot-source').innerHTML = t.footerSource;
   $('foot-github').firstElementChild.textContent = t.footerGitHub;

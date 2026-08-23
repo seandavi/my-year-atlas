@@ -13,6 +13,13 @@
   <header class="top">
     <h1 class="wordmark">Year Atlas</h1>
     <span class="tag">Everyone born in your year.</span>
+    <button id="share" class="share-icon" type="button" hidden>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12"/><path d="M8 7l4-4 4 4"/>
+        <path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/>
+      </svg>
+    </button>
   </header>
 
   <main>
@@ -37,9 +44,6 @@
       <p class="invite">Type the year you were born.</p>
     </section>
 
-    <p class="actions" id="share-actions" hidden>
-      <button id="share" type="button">Download image</button>
-    </p>
     <p id="share-status" class="visually-hidden" role="status"></p>
 
     <section id="context" hidden></section>

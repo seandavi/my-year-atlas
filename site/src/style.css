@@ -252,3 +252,14 @@ footer p { margin-top: 8px; }
   font-variant-numeric: normal;
 }
 .fig-l { font-size: 0.8rem; line-height: 1.35; color: var(--ink-soft); }
+
+/* share icon: header top right, out of the reading column */
+.top { position: relative; }
+.share-icon {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0;
+  background: none; border: 1px solid var(--line-strong, var(--line));
+  border-radius: 8px; color: var(--ink-soft); cursor: pointer;
+}
+.share-icon:hover, .share-icon:focus-visible { color: var(--gold); border-color: var(--gold); }
