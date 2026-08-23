@@ -2,11 +2,14 @@
 // Stateless; all data comes from the static assets it fronts.
 import { ImageResponse } from "workers-og";
 import { parquetReadObjects } from "hyparquet";
+import { fmtPeople, fmtPct, percentile } from "./format.js";
+import { shortName } from "./names.js";
 import fontRegular from "../assets/inter-latin-400-normal.woff";
 import fontBold from "../assets/inter-latin-700-normal.woff";
 
 const YEAR_MIN = 1926;
 const YEAR_MAX = 2026;
+const SMALL_POP = 90000; // matches site/src/main.js (tereza P2-2)
 
 export default {
   async fetch(request, env, ctx) {
@@ -15,7 +18,7 @@ export default {
     const res = await env.ASSETS.fetch(request);
     const ct = res.headers.get("content-type") || "";
     if (!ct.includes("text/html")) return res;
-    return rewriteMeta(res, url);
+    return rewriteMeta(res, url, env);
   },
 };
 
@@ -29,6 +32,55 @@ function parseParams(url) {
   return { y: validY ? y : null, c };
 }
 
+// ---------- data ----------
+
+// Returns { y, name (display name or null for world), alive, pct, openEnded,
+// small } or null. Country falls back to world when the row is missing.
+async function getStat(env, origin, y, c) {
+  if (y === null) return null;
+  if (c) {
+    const s = await getCountry(env, origin, y, c);
+    if (s) return s;
+  }
+  return getWorld(env, origin, y);
+}
+
+async function getWorld(env, origin, y) {
+  const res = await env.ASSETS.fetch(`${origin}/data/world-now.json`);
+  if (!res.ok) return null;
+  const rows = await res.json();
+  const row = rows.find((r) => r.birth_year === y);
+  if (!row) return null;
+  return {
+    y,
+    name: null,
+    alive: Number(row.alive),
+    pct: fmtPct(percentile(row.cum_alive_younger, row.alive, row.total_alive)),
+    openEnded: !!row.open_ended,
+    small: false,
+  };
+}
+
+async function getCountry(env, origin, y, c) {
+  const res = await env.ASSETS.fetch(`${origin}/data/cohorts-now.parquet`);
+  if (!res.ok) return null;
+  const file = await res.arrayBuffer();
+  const rows = await parquetReadObjects({
+    file,
+    columns: ["iso3", "location_name", "birth_year", "alive", "open_ended", "cum_alive_younger", "total_alive"],
+  });
+  const row = rows.find((r) => r.iso3 === c && Number(r.birth_year) === y);
+  if (!row) return null;
+  return {
+    y,
+    name: shortName(row.location_name),
+    alive: Number(row.alive),
+    pct: fmtPct(percentile(row.cum_alive_younger, row.alive, row.total_alive)),
+    openEnded: !!row.open_ended,
+    small: Number(row.total_alive) < SMALL_POP,
+  };
+}
+
 // ---------- /og ----------
 
 async function handleOg(url, env, ctx) {
@@ -38,12 +90,8 @@ async function handleOg(url, env, ctx) {
   const hit = await cache.match(cacheKey);
   if (hit) return hit;
 
-  let card = null;
-  if (y !== null) {
-    card = c ? await countryCard(env, url.origin, y, c) : null;
-    if (!card) card = await worldCard(env, url.origin, y);
-  }
-  if (!card) card = genericCard();
+  const stat = await getStat(env, url.origin, y, c);
+  const card = stat ? cardHtml(stat) : genericCard();
 
   const img = new ImageResponse(card, {
     width: 1200,
@@ -60,99 +108,82 @@ async function handleOg(url, env, ctx) {
   return res;
 }
 
-async function worldCard(env, origin, y) {
-  const res = await env.ASSETS.fetch(`${origin}/data/world-now.json`);
-  if (!res.ok) return null;
-  const rows = await res.json();
-  const row = rows.find((r) => r.birth_year === y);
-  if (!row) return null;
-  return cardHtml({
-    y,
-    place: "Worldwide",
-    alive: row.alive,
-    pct: percentile(row),
-    openEnded: row.open_ended,
-    inPlace: "",
-  });
-}
-
-async function countryCard(env, origin, y, c) {
-  const res = await env.ASSETS.fetch(`${origin}/data/cohorts-now.parquet`);
-  if (!res.ok) return null;
-  const file = await res.arrayBuffer();
-  const rows = await parquetReadObjects({
-    file,
-    columns: ["iso3", "location_name", "birth_year", "alive", "open_ended", "cum_alive_younger", "total_alive"],
-  });
-  const row = rows.find((r) => r.iso3 === c && Number(r.birth_year) === y);
-  if (!row) return null;
-  const name = row.location_name;
-  return cardHtml({
-    y,
-    place: name,
-    alive: Number(row.alive),
-    pct: percentile(row),
-    openEnded: row.open_ended,
-    inPlace: ` in ${name}`,
-  });
-}
-
-// Own single-year bucket counted half (spec §6.4).
-function percentile(row) {
-  return Math.round(((Number(row.cum_alive_younger) + 0.5 * Number(row.alive)) / Number(row.total_alive)) * 100);
-}
-
-// "91,070,000" style: >=1M rounded to the nearest 10,000.
-function fmt(n) {
-  if (n >= 1e6) n = Math.round(n / 1e4) * 1e4;
-  return n.toLocaleString("en-US");
-}
-
 function esc(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
 // ---------- card templates (satori-flavored HTML) ----------
 
-const BG = "#101828";
-const FRAME = `display:flex;flex-direction:column;justify-content:space-between;width:1200px;height:630px;background:${BG};color:#ffffff;padding:64px 72px;font-family:Inter`;
-const WORDMARK = `<div style="display:flex;margin-left:auto;font-size:38px;font-weight:700;color:#93c5fd;letter-spacing:0.5px">Year Atlas</div>`;
+// Site palette per FIXSPEC (ilse: card must share the site's tokens).
+const BG = "#0c1322";
+const INK = "#eef1f7";
+const SOFT = "#9aa6bd";
+const GOLD = "#e8b64c";
+const FRAME = `display:flex;flex-direction:column;justify-content:space-between;width:1200px;height:630px;background:${BG};color:${INK};padding:56px 72px;font-family:Inter`;
+const WORDMARK = `<div style="display:flex;margin-left:auto;font-size:38px;font-weight:700;color:${GOLD};letter-spacing:0.5px">Year Atlas</div>`;
 
-function cardHtml({ y, place, alive, pct, openEnded, inPlace }) {
-  const born = openEnded ? `were born in ${y} or earlier` : `were born in ${y}`;
+function cardHtml({ y, name, alive, pct, openEnded, small }) {
+  const yLabel = openEnded ? `${y} or earlier` : `${y}`;
+  // FIXSPEC copy templates; the vintage line carries the "when" (folasade F2).
+  const sentence = name
+    ? `people living in ${esc(name)} were born in ${yLabel}`
+    : `people alive right now were born in ${yLabel}`;
   // NEVER survival/attrition on a country card (spec §4.2); rank line only.
-  const rank = `older than ${pct}% of ${inPlace ? "people in " + esc(place) : "the world"}`;
+  const rank = name ? `older than ${pct}% of people in ${esc(name)}` : `older than ${pct}% of the world`;
+  const caveat = small
+    ? `<div style="display:flex;font-size:30px;font-weight:400;color:${SOFT};margin-top:16px">Small population — estimates are noisy.</div>`
+    : "";
   return `
   <div style="${FRAME}">
     <div style="display:flex;width:100%;align-items:center">
-      <div style="display:flex;font-size:34px;font-weight:400;color:#94a3b8">${esc(place)} · ${y}</div>
+      <div style="display:flex;font-size:34px;font-weight:400;color:${SOFT}">${esc(name || "Worldwide")} · ${y}</div>
       ${WORDMARK}
     </div>
     <div style="display:flex;flex-direction:column">
-      <div style="display:flex;font-size:132px;font-weight:700;letter-spacing:-4px;line-height:1;font-variant-numeric:tabular-nums">${fmt(alive)}</div>
-      <div style="display:flex;font-size:42px;font-weight:400;color:#cbd5e1;margin-top:22px">people alive today${esc(inPlace)} ${born}</div>
+      <div style="display:flex;align-items:baseline">
+        <div style="display:flex;font-size:44px;font-weight:400;color:${SOFT};margin-right:20px">about</div>
+        <div style="display:flex;font-size:120px;font-weight:700;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums">${fmtPeople(alive)}</div>
+      </div>
+      <div style="display:flex;font-size:42px;font-weight:400;color:${SOFT};margin-top:22px">${sentence}</div>
     </div>
-    <div style="display:flex;font-size:42px;font-weight:700;color:#6ee7b7">${rank}</div>
+    <div style="display:flex;flex-direction:column">
+      <div style="display:flex;font-size:42px;font-weight:700;color:${GOLD}">${rank}</div>
+      ${caveat}
+      <div style="display:flex;font-size:26px;font-weight:400;color:${SOFT};margin-top:20px">mid-2026 · UN World Population Prospects 2024</div>
+    </div>
   </div>`;
 }
 
 function genericCard() {
   return `
   <div style="${FRAME};justify-content:center;align-items:center">
-    <div style="display:flex;font-size:110px;font-weight:700;color:#93c5fd;letter-spacing:-2px">Year Atlas</div>
-    <div style="display:flex;font-size:44px;font-weight:400;color:#cbd5e1;margin-top:28px">How many people alive today share your birth year?</div>
+    <div style="display:flex;font-size:110px;font-weight:700;color:${GOLD};letter-spacing:-2px">Year Atlas</div>
+    <div style="display:flex;font-size:44px;font-weight:400;color:${SOFT};margin-top:28px">How many people alive today share your birth year?</div>
   </div>`;
 }
 
 // ---------- HTML meta injection ----------
 
-function rewriteMeta(res, url) {
+// ponytail: fetches the data assets per HTML request (no cache); ASSETS reads
+// are edge-local and cheap — add a cache.match layer if it ever shows up.
+async function rewriteMeta(res, url, env) {
   const { y, c } = parseParams(url);
-  const og = y ? `${url.origin}/og?y=${y}${c ? `&c=${c}` : ""}` : `${url.origin}/og`;
-  const title = y ? `Born in ${y}${c ? ` (${c})` : ""} — Year Atlas` : "Year Atlas";
-  const desc = y
-    ? `How many people alive today were born in ${y}? See the cohort${c ? ` in ${c}` : ""} on Year Atlas.`
-    : "Enter a birth year and see how many people alive today share it.";
+  const stat = await getStat(env, url.origin, y, c);
+  const og = y !== null ? `${url.origin}/og?y=${y}${c ? `&c=${c}` : ""}` : `${url.origin}/og`;
+  let title, desc;
+  if (stat) {
+    const yLabel = stat.openEnded ? `${stat.y} or earlier` : `${stat.y}`;
+    const n = fmtPeople(stat.alive);
+    title = stat.name
+      ? `Born in ${yLabel}, ${stat.name} — ${n} alive mid-2026 · Year Atlas`
+      : `Born in ${yLabel} — ${n} alive mid-2026 · Year Atlas`;
+    desc = stat.name
+      ? `About ${n} people living in ${stat.name} were born in ${yLabel} (mid-2026, UN projection).`
+      : `About ${n} people alive right now were born in ${yLabel} (mid-2026, UN projection).`;
+  } else {
+    title = "Year Atlas";
+    desc = "Enter a birth year and see how many people alive today share it.";
+  }
   const tags =
     `<meta property="og:title" content="${esc(title)}">` +
     `<meta property="og:description" content="${esc(desc)}">` +
@@ -170,6 +201,7 @@ function rewriteMeta(res, url) {
     .on('meta[property="og:image:height"]', remove)
     .on('meta[name="twitter:card"]', remove)
     .on('meta[name="twitter:image"]', remove)
+    .on("title", { element(el) { el.setInnerContent(title); } })
     .on("head", { element(el) { el.append(tags, { html: true }); } })
     .transform(res);
 }
