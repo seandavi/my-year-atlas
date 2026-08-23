@@ -1,0 +1,13 @@
+{
+  "name": "year-atlas",
+  "main": "src/index.js",
+  "compatibility_date": "2025-06-01",
+  "assets": {
+    "directory": "../site/dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/og*", "/"]
+  },
+  "rules": [
+    { "type": "Data", "globs": ["**/*.woff", "**/*.ttf"], "fallthrough": true }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "year-atlas-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "hyparquet": "^1.17.1",
+    "workers-og": "^0.0.25"
+  },
+  "devDependencies": {
+    "wrangler": "^4.28.0"
+  }
+}
