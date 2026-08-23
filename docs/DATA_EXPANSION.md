@@ -246,6 +246,20 @@ to 200 countries and recent cohorts.
 license-clean and buildable for ~41 (mostly rich) countries — a textbook case
 for the partial-coverage policy above.
 
+## Addendum 3: labour/occupation pass
+
+- **ILOSTAT — primary labour/occupation source. CC BY 4.0**, 5-year age bands,
+  employment by occupation × age × sex, direct `.parquet` bulk URLs. This is
+  the "what does your cohort do for work" dimension.
+- **World Bank source 40 ("Population estimates and projections")** carries
+  true single-year-of-age series (`SP.POP.AG00..25.{FE,MA}.IN`, 1960–2050,
+  CC BY 4.0) — but it largely mirrors UN WPP, which we already have. Note for
+  cross-checks only.
+- **World Bank EdStats is frozen** (bulk last touched 2023; key series stop
+  ~2019). Barro-Lee attainment within it remains usable as static history.
+- **IPUMS confirmed blocked** (registration + no redistribution). OECD gated
+  behind a bot-wall; optional.
+
 ## Ranking
 
 Ranked on license cleanliness × granularity, per the policy above, using only
