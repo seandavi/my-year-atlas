@@ -189,6 +189,8 @@ export default {
 
   shareBtnDownload: 'Descargar imagen',
   shareBtnShare: 'Compartir imagen',
+  themeToDark: 'Cambiar a tema oscuro',
+  themeToLight: 'Cambiar a tema claro',
   sharedStatus: 'Compartido.',
   savedStatus: (name) => `Imagen guardada: ${name}.`,
   shareText: (n, inPlace, yl) => (inPlace

@@ -181,6 +181,8 @@ export default {
   // share (button + canvas card)
   shareBtnDownload: 'Download image',
   shareBtnShare: 'Share image',
+  themeToDark: 'Switch to dark theme',
+  themeToLight: 'Switch to light theme',
   sharedStatus: 'Shared.',
   savedStatus: (name) => `Saved ${name}.`,
   shareText: (n, inPlace, yl) => (inPlace

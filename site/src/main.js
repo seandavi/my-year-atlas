@@ -618,6 +618,7 @@ function applyStatic() {
   const shareLabel = navigator.canShare ? t.shareBtnShare : t.shareBtnDownload;
   $('share').setAttribute('aria-label', shareLabel);
   $('share').setAttribute('title', shareLabel);
+  updateThemeLabel();
   $('foot-projection').innerHTML = t.footerProjection;
   $('foot-source').innerHTML = t.footerSource;
   $('foot-github').firstElementChild.textContent = t.footerGitHub;
@@ -718,3 +719,22 @@ fetch(import.meta.env.BASE_URL + 'data/meta.json').then((r) => r.json()).then((m
   localeReady.then(() => { $('vintage').textContent = t.vintageMeta(m); });
 });
 localeReady.then(syncInputs);
+
+// --- theme toggle: system default, one click overrides, localStorage persists ---
+function effectiveTheme() {
+  return document.documentElement.dataset.theme
+    ?? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+}
+function updateThemeLabel() {
+  const next = effectiveTheme() === 'dark' ? t.themeToLight : t.themeToDark;
+  const b = $('theme-toggle');
+  b.setAttribute('aria-label', next);
+  b.setAttribute('title', next);
+}
+$('theme-toggle').addEventListener('click', () => {
+  const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('theme', next); } catch { /* private mode */ }
+  updateThemeLabel();
+  renderAnswer(); // canvas dot field reads CSS vars at draw time
+});

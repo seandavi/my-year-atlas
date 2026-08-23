@@ -40,6 +40,35 @@
     --map-hi: #e8b64c;
   }
 }
+/* manual theme override (header toggle) beats the media query */
+:root[data-theme="light"] {
+  --bg: #f5f6f8;
+  --ink: #131f36;
+  --ink-soft: #4a5670;
+  --gold: #8a5f13;        /* accent, 5.2:1 on --bg (WCAG AA at body sizes) */
+  --dot: #131f36;
+  --dot-dim: rgba(19, 31, 54, 0.55);
+  --line: rgba(19, 31, 54, 0.14);
+  --line-strong: rgba(19, 31, 54, 0.36);
+  --card: #ffffff;
+  --map-lo: #d3d8e3;      /* map ramp: ink tint → the same gold */
+  --map-hi: #8a5f13;
+}
+:root[data-theme="dark"] {
+  --bg: #0c1322;
+  --ink: #eef1f7;
+  --ink-soft: #9aa6bd;
+  --gold: #e8b64c;
+  --dot: #eef1f7;
+  /* same encoding as light mode: neutral dim field, gold user column */
+  --dot-dim: rgba(238, 241, 247, 0.45);
+  --line: rgba(238, 241, 247, 0.14);
+  --line-strong: rgba(238, 241, 247, 0.34);
+  --card: #131c30;
+  --map-lo: #2a4070;    /* map ramp: navy → gold */
+  --map-hi: #e8b64c;
+}
+
 
 * { box-sizing: border-box; margin: 0; }
 
@@ -263,3 +292,19 @@ footer p { margin-top: 8px; }
   border-radius: 8px; color: var(--ink-soft); cursor: pointer;
 }
 .share-icon:hover, .share-icon:focus-visible { color: var(--gold); border-color: var(--gold); }
+
+/* theme toggle sits left of the share icon; show the icon of the target theme */
+.theme-toggle { right: 48px; }
+.ic-moon { display: none; }
+:root[data-theme="dark"] .ic-moon { display: none; }
+:root[data-theme="dark"] .ic-sun { display: inline; }
+:root[data-theme="light"] .ic-sun { display: none; }
+:root[data-theme="light"] .ic-moon { display: inline; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .ic-sun { display: inline; }
+  :root:not([data-theme]) .ic-moon { display: none; }
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .ic-sun { display: none; }
+  :root:not([data-theme]) .ic-moon { display: inline; }
+}
