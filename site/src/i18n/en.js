@@ -88,7 +88,25 @@ export default {
   // people
   peopleHeading: 'In your company',
   peopleBrought: (y, listHtml) => `${y} also brought ${listHtml}.`,
-  peopleNote: 'Ranked by Wikipedia language editions — one measure of fame among many.',
+  peopleNote: 'Ranked by Wikipedia presence, women and men alternating — one measure of fame among many. Names link to Wikipedia.',
+
+  // events (#40, en-only for now)
+  eventsHeading: 'The year itself',
+  eventsLink: '→ Wikipedia',
+
+  // baby names (#19)
+  namesHeading: 'The names of your year',
+  namesLine: (inPlace, yearPhrase, f0, m0) => `Babies born ${inPlace} ${yearPhrase}
+      were most often named ${f0} and ${m0}.`,
+  namesYearPhrase: (y) => `in ${y}`,
+  namesDecadePhrase: (d) => `in the ${d}s`,
+  namesAlso: (fs, ms) => `Also common: ${fs.join(', ')} · ${ms.join(', ')}.`,
+  namesRegNote: '(by year of registration)',
+  namesAttribution: (source, url, license) => `Names: <a href="${url}">${source}</a> (${license}).`,
+
+  // info links + footer GitHub (#42)
+  infoTitle: 'How we count this',
+  footerGitHub: 'Source on GitHub',
 
   // dot field + tables
   viewAsTable: 'View as table',

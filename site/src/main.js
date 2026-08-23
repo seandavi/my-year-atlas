@@ -7,6 +7,9 @@ import {
 import { renderDotField, trajectorySVG } from './dots.js';
 import { shortName } from './names.js';
 import { t, setLocale, LANGS, registerIso2, iso2Of } from './i18n/index.js';
+import {
+  interleavePeople, personUrl, eventsFor, namesInRange, decadeLabel, infoLink,
+} from './sections.js';
 
 const $ = (id) => document.getElementById(id);
 const MIN_YEAR = 1926, MAX_YEAR = 2026, REF_YEAR = 2026, SMALL_POP = 90000;
@@ -76,14 +79,16 @@ async function renderPeople(y) {
   if (!y) { el.hidden = true; el.innerHTML = ''; return; }
   if (!people) await loadPeople();
   if (y !== state.year) return; // year changed while loading
-  const list = (people[y] ?? []).slice(0, 6);
+  const list = interleavePeople(people[y] ?? []);
   if (!list.length) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
   // Harvested descriptors are English-only: for es/pt show names alone rather
   // than machine-translating them (a later harvest can add localized ones).
-  const listHtml = list.map(([name, desc]) =>
-    `<strong>${esc(name)}</strong>${t.lang === 'en' && desc ? ` (${esc(shortDesc(desc))})` : ''}`).join(', ');
-  el.innerHTML = `<h2>${t.peopleHeading}</h2>
+  // Links (Wikipedia, else Wikidata) apply in every language.
+  const listHtml = list.map((p) =>
+    `<a href="${esc(personUrl(p))}" target="_blank" rel="noopener"><strong>${esc(p[0])}</strong></a>${
+      t.lang === 'en' && p[1] ? ` (${esc(shortDesc(p[1]))})` : ''}`).join(', ');
+  el.innerHTML = `<h2>${t.peopleHeading} ${infoLink('people')}</h2>
     <p>${t.peopleBrought(y, listHtml)}</p>
     <p class="note">${t.peopleNote}</p>`;
 }
@@ -97,6 +102,70 @@ function shortDesc(d) {
 }
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+// events.json (#40): 3 one-line events per year, English-only for now.
+// The file may not exist yet — absent file = section stays hidden.
+let events = null, eventsPromise;
+function loadEvents() {
+  eventsPromise ??= fetch(import.meta.env.BASE_URL + 'data/events.json')
+    .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+    .then((d) => (events = d && typeof d === 'object' ? d : {}));
+  return eventsPromise;
+}
+
+async function renderEvents(y) {
+  const el = $('events');
+  const hide = () => { el.hidden = true; el.innerHTML = ''; };
+  if (!y || state.lang !== 'en') return hide();
+  if (!events) await loadEvents();
+  if (y !== state.year) return; // year changed while loading
+  const list = eventsFor(events, y, state.lang);
+  if (!list.length) return hide();
+  el.hidden = false;
+  el.innerHTML = `<h2>${t.eventsHeading}</h2>
+    <ul>${list.map((e) => `<li>${esc(e.t)}
+      <a href="https://en.wikipedia.org/wiki/${esc(e.w)}" target="_blank" rel="noopener">${t.eventsLink}</a></li>`).join('')}</ul>`;
+}
+
+// baby names (#19): index once, per-country file on demand, both cached.
+let namesIndex = null, namesIndexPromise;
+const namesByIso = {};
+function loadNamesIndex() {
+  namesIndexPromise ??= fetch(import.meta.env.BASE_URL + 'data/names/index.json')
+    .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+    .then((d) => (namesIndex = d ?? {}));
+  return namesIndexPromise;
+}
+
+async function renderNames(y, iso3) {
+  const el = $('names');
+  const hide = () => { el.hidden = true; el.innerHTML = ''; };
+  if (!y || !iso3) return hide();
+  if (!namesIndex) await loadNamesIndex();
+  if (y !== state.year || iso3 !== state.iso3) return;
+  if (!namesInRange(namesIndex, iso3, y)) return hide();
+  if (!namesByIso[iso3]) {
+    try {
+      namesByIso[iso3] = await fetch(`${import.meta.env.BASE_URL}data/names/${iso3}.json`)
+        .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); });
+    } catch { return hide(); }
+    if (y !== state.year || iso3 !== state.iso3) return;
+  }
+  const d = namesByIso[iso3];
+  const yr = d.years?.[y];
+  if (!yr?.f?.length || !yr?.m?.length) return hide();
+  const yearPhrase = d.granularity === 'decade'
+    ? t.namesDecadePhrase(decadeLabel(y)) : t.namesYearPhrase(y);
+  el.hidden = false;
+  // ponytail: license line drops its own trailing parenthetical to avoid
+  // "(Public domain (US government work))" — attribution text stays intact.
+  const license = (d.license ?? '').replace(/\s*\(.*\)\s*$/, '');
+  el.innerHTML = `<h2>${t.namesHeading}</h2>
+    <p>${t.namesLine(placeIn(), yearPhrase, esc(yr.f[0]), esc(yr.m[0]))}${
+      d.basis === 'registration' ? ` <span class="reg-note">${t.namesRegNote}</span>` : ''}</p>
+    <p class="note">${t.namesAlso(yr.f.slice(1, 4).map(esc), yr.m.slice(1, 4).map(esc))}</p>
+    <p class="note">${t.namesAttribution(esc(d.source ?? ''), esc(d.url ?? ''), esc(license))}</p>`;
+}
 
 let contrastPromise;
 function loadContrast() {
@@ -155,6 +224,8 @@ function renderAnswer() {
   updateTitle();
   renderContext(currentRows(), state.year); // hides itself when there's nothing to say
   renderPeople(state.year); // async; hides itself when there's no list
+  renderEvents(state.year); // async; en-only, hidden when events.json is absent
+  renderNames(state.year, state.iso3); // async; needs country + coverage
   if (!state.year) {
     el.innerHTML = `<p class="invite">${t.invite}</p>`;
     $('share-actions').hidden = true;
@@ -191,17 +262,19 @@ function renderAnswer() {
     medianLine = t.medianLine(mY, Math.sign(y - mY));
   }
   parts.push(`<h2 class="visually-hidden">${t.hiddenHeading(yl, state.iso3 ? placeIn() : null)}</h2>`);
+  // ⓘ links (#42) ride inside existing paragraphs, never the headline itself
+  const withInfo = (html, anchor) => html.replace(/<\/p>\s*$/, ` ${infoLink(anchor)}</p>`);
   // headline + sentence as ONE element so the number never orphans (marcus P1-2)
   if (state.iso3) {
     parts.push(t.headlineCountry(alive, placeIn(), yl, t.fmtPct(pct)));
-    parts.push(medianLine);
-    parts.push(t.migrationCaveat(placeIn(), y));
+    if (medianLine) parts.push(withInfo(medianLine, 'rank'));
+    parts.push(withInfo(t.migrationCaveat(placeIn(), y), 'migration'));
     if (Number(row.total_alive) < SMALL_POP) {
-      parts.push(`<p class="note">${t.smallPop}</p>`);
+      parts.push(`<p class="note">${t.smallPop} ${infoLink('small-countries')}</p>`);
     }
   } else {
     parts.push(t.headlineWorld(alive, yl, t.fmtPct(pct)));
-    parts.push(medianLine);
+    if (medianLine) parts.push(withInfo(medianLine, 'rank'));
     const anchor = populationAnchor(alive);
     if (anchor) parts.push(`<p class="note">${t.anchorLine(anchor.location_name, anchor.iso2)}</p>`);
     const births = originalCohortSize(rows, y);
@@ -255,7 +328,7 @@ function renderContext(rows, y) {
   s.push(t.medianAgeLine(Math.round(row.median_age)));
   s.push(t.tfrLine(Number(row.tfr)));
   el.hidden = false;
-  el.innerHTML = `<h2>${t.contextHeading(state.iso3 ? placeName() : null)}</h2>
+  el.innerHTML = `<h2>${t.contextHeading(state.iso3 ? placeName() : null)} ${infoLink('context')}</h2>
     <p>${s.join(' ')} <span id="climate-line"></span></p>`;
   const setClimate = () => {
     const span = $('climate-line');
@@ -379,7 +452,7 @@ async function renderTrajectory() {
       callout = `<p class="note">${t.migCallout(ep.start, ep.end, Math.abs(ep.avg), unName(), curIso2(), ep.avg < 0)}</p>`;
     }
   }
-  trajEl.innerHTML = `<h2>${heading}</h2>
+  trajEl.innerHTML = `<h2>${heading} ${infoLink('migration-strip')}</h2>
     <p class="caption">${caption}</p>
     ${trajectorySVG(arc, y, migration)}
     ${callout}
@@ -528,6 +601,7 @@ function applyStatic() {
   $('share').textContent = navigator.canShare ? t.shareBtnShare : t.shareBtnDownload;
   $('foot-projection').innerHTML = t.footerProjection;
   $('foot-source').innerHTML = t.footerSource;
+  $('foot-github').firstElementChild.textContent = t.footerGitHub;
   renderSwitcher();
   updateTitle();
 }
