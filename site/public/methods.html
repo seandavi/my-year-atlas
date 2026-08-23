@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methods — Year Atlas</title>
+<meta name="description" content="Where every number on Year Atlas comes from: sources, choices, and the things we deliberately do not compute.">
+<style>
+  :root {
+    --bg: #fdfdfb;
+    --fg: #1c1c1c;
+    --muted: #5a5a54;
+    --line: #d8d8d0;
+    --accent: #1a5fb4;
+    --code-bg: #f0f0ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #191a1c;
+      --fg: #e6e4de;
+      --muted: #a3a19a;
+      --line: #3c3d40;
+      --accent: #7cb2f0;
+      --code-bg: #26272a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 1.05rem/1.65 Georgia, "Times New Roman", serif;
+  }
+  main {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 5rem;
+  }
+  h1, h2 {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.25;
+  }
+  h1 { font-size: 1.8rem; margin: 1rem 0 0.5rem; }
+  h2 { font-size: 1.25rem; margin: 2.5rem 0 0.75rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--accent); }
+  nav a { text-decoration: none; font-family: system-ui, sans-serif; font-size: 0.95rem; }
+  .updated { color: var(--muted); font-size: 0.9rem; font-family: system-ui, sans-serif; }
+  code {
+    font: 0.88em/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    overflow-wrap: anywhere;
+  }
+  .tablewrap { overflow-x: auto; margin: 0 0 1rem; }
+  table {
+    border-collapse: collapse;
+    font-family: system-ui, sans-serif;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    min-width: 100%;
+  }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.45rem 0.75rem 0.45rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  th { font-weight: 600; }
+  blockquote {
+    margin: 0 0 1rem;
+    padding-left: 1rem;
+    border-left: 3px solid var(--line);
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<main>
+  <nav><a href="/">&larr; Year Atlas</a></nav>
+  <h1>How the numbers are made</h1>
+  <p class="updated">Reference year 2026 &middot; built from UN World Population Prospects 2024 &middot; build commit <code>9609783</code></p>
+
+  <p>Every figure on this site comes from one public dataset through a short, open pipeline. This page explains the choices we made, the ones we deliberately didn't, and exactly where each number comes from. If you find a discrepancy, <a href="https://github.com/seandavi/my-year-atlas/issues">open an issue</a> — challenges to the numbers are welcome.</p>
+
+  <h2>The source</h2>
+  <p>All data is from the United Nations <em>World Population Prospects 2024</em>, medium variant: United Nations, Department of Economic and Social Affairs, Population Division (2024). <em>World Population Prospects 2024</em>. Licensed <a href="https://creativecommons.org/licenses/by/3.0/igo/">CC BY 3.0 IGO</a>. Our derived files carry the same license and are changed from the original — aggregated and remapped from age to birth year, as described below.</p>
+  <p>The exact files we downloaded, with their sha256 checksums so anyone can confirm they are working from the same bytes:</p>
+  <div class="tablewrap"><table>
+    <tr><th>file</th><th>sha256</th></tr>
+    <tr><td><code>WPP2024_PopulationBySingleAgeSex_Medium_1950-2023.csv.gz</code></td><td><code>f84c75789ccbd385122ad19bac70026d6306878442afbaa24e8e50a23b4bee2f</code></td></tr>
+    <tr><td><code>WPP2024_PopulationBySingleAgeSex_Medium_2024-2100.csv.gz</code></td><td><code>31804a296b663716236cd26c46415271cc9386fb3b2be56aff6467ad32283dc8</code></td></tr>
+    <tr><td><code>WPP2024_Demographic_Indicators_Medium.csv.gz</code></td><td><code>286ac36bb1415e2e1ade03acfef0a29f0e4c087e2f78e38c48f50c5df89082bc</code></td></tr>
+  </table></div>
+
+  <h2>Age is not quite birth year</h2>
+  <p>The UN data counts people by <em>completed age</em> at mid-year. Someone who is 54 on 1 July 2026 was born somewhere in the twelve months ending 1 July 1972 — so a single age bucket straddles two calendar birth years, roughly half and half.</p>
+  <p>We use the direct mapping <code>birth_year&nbsp;=&nbsp;reference_year&nbsp;&minus;&nbsp;age</code>: the 54-year-olds of 2026 are shown as the 1972 cohort. A half-and-half split across the two straddled years would look more precise, but the extra precision would be smaller than the uncertainty already inside the underlying estimates, and it would complicate every downstream number. So we keep the simple mapping and say so here rather than hiding it. In practice this shifts each cohort by up to half a year of age; it does not change the shape of any comparison.</p>
+
+  <h2>"Right now" is a projection</h2>
+  <p>WPP 2024 provides estimates through 2023 and projections after that. Our reference year is mid-2026, which means every "alive now" figure is the UN's <em>medium-variant projection</em> for 1 July 2026 — a careful forecast, not a count. Nobody has counted the world's population this year; the UN has modeled it from the most recent censuses, surveys, and vital registration. That is why the site labels the reference year explicitly instead of just saying "today".</p>
+
+  <h2>Countries gain and lose people who were born elsewhere</h2>
+  <p>Worldwide, the arithmetic is closed: everyone alive from a birth year was born in that year, so survivors can never exceed births, and the gap between them is mortality. That is why the "share of the cohort still living" statistic appears <strong>only for the world</strong>.</p>
+  <p>Countries don't work that way, because people move. A country's residents born in 1985 include immigrants born elsewhere and exclude emigrants born there. The United Arab Emirates makes the point vividly: in 2026 it has about <strong>232,060 residents born in 1985</strong>, but only about <strong>39,301 babies were born there in 1985</strong> — nearly six times more 1985-born residents than 1985 births. That is migration, not a miracle of survival. Wherever the site shows a country's births next to its living cohort, the figure is labeled net of migration and is never presented as attrition.</p>
+
+  <h2>Where you sit in the age order</h2>
+  <p>"Older than N% of people alive" needs a decision about your own cohort: everyone born in your year is neither strictly older nor strictly younger than you. We count people born in later years as younger, people born in earlier years as older, and your own single-year cohort as <strong>half younger, half older</strong> — the standard mid-rank treatment of ties. The percentile is <code>(people&nbsp;born&nbsp;later&nbsp;+&nbsp;half&nbsp;your&nbsp;cohort)&nbsp;/&nbsp;everyone&nbsp;alive</code>.</p>
+
+  <h2>The 100+ bucket</h2>
+  <p>The UN's oldest age group is open-ended: "100 and over". It pools everyone born in or before <code>reference_year&nbsp;&minus;&nbsp;100</code> (1926 for our slice), so it isn't a single birth-year cohort. We flag it as open-ended, show it as "born in or before", and exclude it from statistics that need one-year cohorts, such as the world survivors-versus-births check and the trajectory charts.</p>
+
+  <h2>Small countries are noisy</h2>
+  <p>Below roughly 90,000 residents, the UN estimates get noisy and single-year age cells can round oddly. We still show these countries, but flagged, so a strange-looking number for a very small place is read with the right amount of salt.</p>
+
+  <h2>What we deliberately do not compute</h2>
+  <p>Nothing on this site estimates an individual's life expectancy, remaining years, or anything of the kind — not in fine print, not behind a toggle. The same data could power that, and we chose not to: this is a tool for seeing the company you keep, the cohort moving through time with you, and a countdown would poison that view without telling any one person anything true about their own life. Population statistics describe cohorts, not individuals.</p>
+
+  <h2>Where each number comes from</h2>
+  <p>Every displayed statistic traces to a named file in the repository and a query you can run yourself. The derived files are built by <a href="https://github.com/seandavi/my-year-atlas/blob/main/scripts/build.sql"><code>scripts/build.sql</code></a> (DuckDB), and the raw counts — stored in thousands in the UN files — are multiplied out to persons at build time.</p>
+  <div class="tablewrap"><table>
+    <tr><th>statistic</th><th>source file</th><th>query sketch</th></tr>
+    <tr><td>Cohort size now (world)</td><td><code>data/world-now.json</code></td><td><code>alive</code> where <code>birth_year = Y</code></td></tr>
+    <tr><td>Cohort size now (country)</td><td><code>data/cohorts-now.parquet</code></td><td><code>alive</code> where <code>iso3 = C and birth_year = Y</code></td></tr>
+    <tr><td>Original cohort size (world births)</td><td><code>data/world-now.json</code> (from <code>births.parquet</code>)</td><td><code>births</code> where <code>birth_year = Y</code>; null before 1950</td></tr>
+    <tr><td>Share still living (world only)</td><td><code>data/world-now.json</code></td><td><code>alive / births</code>; asserted &le; 1 at build</td></tr>
+    <tr><td>Age percentile</td><td><code>data/world-now.json</code> (from <code>rank_index.parquet</code>)</td><td><code>(cum_alive_younger + 0.5 &times; alive) / total_alive</code></td></tr>
+    <tr><td>Passport contrast</td><td><code>data/cohorts-now.parquet</code></td><td>same <code>birth_year</code>, several <code>iso3</code>; country births labeled net of migration</td></tr>
+    <tr><td>Cohort trajectory</td><td><code>data/traj/iso3=&hellip;/*.parquet</code></td><td><code>alive</code> by <code>ref_year</code> for one <code>birth_year</code></td></tr>
+    <tr><td>Bigger cohorts</td><td><code>data/world-now.json</code></td><td>birth years with <code>alive</code> &gt; yours, sorted</td></tr>
+  </table></div>
+
+  <h2>Reproducing the build</h2>
+  <p>The whole pipeline is in the open at <a href="https://github.com/seandavi/my-year-atlas">github.com/seandavi/my-year-atlas</a>. Running <code>./scripts/build.sh</code> downloads the raw files (verifying the checksums above), runs <code>scripts/build.sql</code> in DuckDB, and fails loudly if any sanity assertion trips — including the world-level check that survivors of a birth year never exceed births in that year. The figures on this site were produced at commit <code>9609783</code>.</p>
+
+  <p class="updated">Questions or corrections: <a href="https://github.com/seandavi/my-year-atlas/issues">open a data question</a>.</p>
+</main>
+</body>
+</html>
