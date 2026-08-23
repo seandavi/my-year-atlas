@@ -1,7 +1,7 @@
 // The signature dot field: one column per birth year, one dot = a real number
 // of people. Youngest cohorts on the left; the field thins toward the right
 // as years get earlier. Canvas, static render (reduced-motion safe by design).
-import { fmtPeople } from './stats.js';
+import { t } from './i18n/index.js';
 
 /** Round up to a "nice" dot value: 1/2/2.5/5 × 10^k. Never below 1 person. */
 export function niceScale(maxAlive, maxDots = 56) {
@@ -69,19 +69,22 @@ export function renderDotField(canvas, captionEl, rows, userYear, placeName) {
     }
   });
 
-  const dotLabel = scale === 1 ? 'one person' : `${fmtPeople(scale)} people`;
-  captionEl.textContent =
-    `One dot is ${dotLabel} alive in mid-2026 (UN projection), by birth year — ${placeName}. Newest years on the left.`;
+  captionEl.textContent = t.dotCaption(scale, placeName);
 
   // aria: state the finding, not just the mechanics (marcus P1-3)
   const peak = sorted.reduce((a, b) => (Number(b.alive) > Number(a.alive) ? b : a));
   const oldest = sorted[sorted.length - 1];
   const you = userYear != null ? sorted.find((r) => Number(r.birth_year) === userYear) : null;
-  canvas.setAttribute('aria-label',
-    `Population of ${placeName} by birth year. The field is largest around ${peak.birth_year} `
-    + `at about ${fmtPeople(peak.alive)} and thins to about ${fmtPeople(oldest.alive)} by ${oldest.birth_year}.`
-    + (you ? ` The highlighted ${userYear} column sits at about ${fmtPeople(you.alive)}.` : '')
-    + ` One dot is ${dotLabel}.`);
+  canvas.setAttribute('aria-label', t.dotAria({
+    place: placeName,
+    peakYear: Number(peak.birth_year),
+    peakAlive: Number(peak.alive),
+    oldestYear: Number(oldest.birth_year),
+    oldestAlive: Number(oldest.alive),
+    userYear,
+    youAlive: you ? Number(you.alive) : null,
+    scale,
+  }));
 }
 
 /**
@@ -116,7 +119,7 @@ export function trajectorySVG(traj, userYear, migration = null) {
         const cls = m.net >= 0 ? 'var(--gold)' : 'var(--ink-soft)';
         return `<rect x="${(X(m.year) - bw / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, 0.5).toFixed(1)}" fill="${cls}" opacity="0.85"/>`;
       }).join('')
-      + `<text x="${PAD.l}" y="${top - 4}" font-size="10" fill="var(--ink-soft)">net migration, all ages — gold: more arrived · grey: more left</text>`;
+      + `<text x="${PAD.l}" y="${top - 4}" font-size="10" fill="var(--ink-soft)">${t.stripLegend}</text>`;
   }
   const pts = (seg) => seg.map((d) => `${X(d.ref_year).toFixed(1)},${Y(d.alive).toFixed(1)}`).join(' ');
 
@@ -130,17 +133,22 @@ export function trajectorySVG(traj, userYear, migration = null) {
     `<text x="${X(yr)}" y="${lineH - 6}" text-anchor="${anchor}" font-size="11" fill="var(--ink-soft)">${yr}</text>`;
   const ticks = tick(x0, 'start') + tick(x1, 'end');
 
-  const label = `People born in ${userYear}, counted in each year from ${x0} to ${x1}: `
-    + `about ${fmtPeople(first.alive)} in ${x0}, `
-    + (peak.ref_year !== x0 && peak.ref_year !== x1 ? `peaking at about ${fmtPeople(peak.alive)} around ${peak.ref_year}, ` : '')
-    + `about ${fmtPeople(now.alive)} in ${x1}. The last stretch, 2024 to 2026, is a UN projection.`;
+  const label = t.trajAria({
+    y: userYear,
+    x0,
+    x1,
+    firstAlive: first.alive,
+    peakAlive: peak.ref_year !== x0 && peak.ref_year !== x1 ? peak.alive : null,
+    peakYear: peak.ref_year,
+    nowAlive: now.alive,
+  });
 
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">
     <line x1="${PAD.l}" y1="${Y(0)}" x2="${W - PAD.r}" y2="${Y(0)}" stroke="var(--line)"/>
     ${est.length > 1 ? `<polyline points="${pts(est)}" fill="none" stroke="var(--dot)" stroke-width="2"/>` : ''}
     ${proj.length > 1 ? `<polyline points="${pts(proj)}" fill="none" stroke="var(--dot)" stroke-width="2" stroke-dasharray="2 5" opacity="0.75"/>` : ''}
     ${now ? `<circle cx="${X(x1)}" cy="${Y(now.alive)}" r="4" fill="var(--gold)"/>
-    <text x="${Math.min(X(x1), W - 130)}" y="${Math.max(Y(now.alive) - 16, 12)}" font-size="11" font-weight="600" fill="var(--gold)">${x1} · ${fmtPeople(now.alive)}</text>` : ''}
+    <text x="${Math.min(X(x1), W - 130)}" y="${Math.max(Y(now.alive) - 16, 12)}" font-size="11" font-weight="600" fill="var(--gold)">${x1} · ${t.fmtPeople(now.alive)}</text>` : ''}
     ${ticks}
     ${stripSVG}
   </svg>`;

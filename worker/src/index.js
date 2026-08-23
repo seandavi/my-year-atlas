@@ -1,9 +1,10 @@
 // Year Atlas edge worker: /og share cards + per-URL OG meta injection.
-// Stateless; all data comes from the static assets it fronts.
+// Stateless; all data comes from the static assets it fronts. Copy comes
+// from the shared site locale modules (?lang=es|pt; absent = English).
 import { ImageResponse } from "workers-og";
 import { parquetReadObjects } from "hyparquet";
-import { fmtPeople, fmtPct, percentile } from "./format.js";
-import { shortName, inSentence } from "./names.js";
+import { percentile } from "./format.js";
+import { getLocale } from "./i18n.js";
 import fontRegular from "../assets/inter-latin-400-normal.woff";
 import fontBold from "../assets/inter-latin-700-normal.woff";
 
@@ -29,20 +30,34 @@ function parseParams(url) {
   const validY = Number.isInteger(y) && y >= YEAR_MIN && y <= YEAR_MAX;
   let c = (url.searchParams.get("c") || "").toUpperCase();
   if (!/^[A-Z]{3}$/.test(c) || c === "WLD") c = "";
-  return { y: validY ? y : null, c };
+  const l = url.searchParams.get("lang");
+  const lang = l === "es" || l === "pt" ? l : "en";
+  return { y: validY ? y : null, c, lang };
 }
 
 // ---------- data ----------
 
-// Returns { y, name (display name or null for world), alive, pct, openEnded,
-// small } or null. Country falls back to world when the row is missing.
-async function getStat(env, origin, y, c) {
+// Returns { y, unName (UN name or null for world), iso2, alive, pctRaw
+// (0–1), openEnded, small } or null. Country falls back to world when the
+// row is missing.
+async function getStat(env, origin, y, c, lang) {
   if (y === null) return null;
   if (c) {
     const s = await getCountry(env, origin, y, c);
-    if (s) return s;
+    if (s) {
+      // iso2 feeds Intl.DisplayNames — only the non-English locales need it
+      if (lang !== "en") s.iso2 = await getIso2(env, origin, c);
+      return s;
+    }
   }
   return getWorld(env, origin, y);
+}
+
+async function getIso2(env, origin, iso3) {
+  const res = await env.ASSETS.fetch(`${origin}/data/locations.json`);
+  if (!res.ok) return undefined;
+  const locs = await res.json();
+  return locs.find((l) => l.iso3 === iso3)?.iso2;
 }
 
 async function getWorld(env, origin, y) {
@@ -53,9 +68,10 @@ async function getWorld(env, origin, y) {
   if (!row) return null;
   return {
     y,
-    name: null,
+    unName: null,
+    iso2: undefined,
     alive: Number(row.alive),
-    pct: fmtPct(percentile(row.cum_alive_younger, row.alive, row.total_alive)),
+    pctRaw: percentile(row.cum_alive_younger, row.alive, row.total_alive) / 100,
     openEnded: !!row.open_ended,
     small: false,
   };
@@ -73,9 +89,10 @@ async function getCountry(env, origin, y, c) {
   if (!row) return null;
   return {
     y,
-    name: shortName(row.location_name),
+    unName: row.location_name,
+    iso2: undefined,
     alive: Number(row.alive),
-    pct: fmtPct(percentile(row.cum_alive_younger, row.alive, row.total_alive)),
+    pctRaw: percentile(row.cum_alive_younger, row.alive, row.total_alive) / 100,
     openEnded: !!row.open_ended,
     small: Number(row.total_alive) < SMALL_POP,
   };
@@ -84,14 +101,15 @@ async function getCountry(env, origin, y, c) {
 // ---------- /og ----------
 
 async function handleOg(url, env, ctx) {
-  const { y, c } = parseParams(url);
+  const { y, c, lang } = parseParams(url);
   const cache = caches.default;
-  const cacheKey = new Request(`${url.origin}/og?y=${y ?? ""}&c=${c}`);
+  const cacheKey = new Request(`${url.origin}/og?y=${y ?? ""}&c=${c}&lang=${lang}`);
   const hit = await cache.match(cacheKey);
   if (hit) return hit;
 
-  const stat = await getStat(env, url.origin, y, c);
-  const card = stat ? cardHtml(stat) : genericCard();
+  const t = getLocale(lang);
+  const stat = await getStat(env, url.origin, y, c, lang);
+  const card = stat ? cardHtml(stat, t) : genericCard(t);
 
   const img = new ImageResponse(card, {
     width: 1200,
@@ -122,43 +140,43 @@ const GOLD = "#e8b64c";
 const FRAME = `display:flex;flex-direction:column;justify-content:space-between;width:1200px;height:630px;background:${BG};color:${INK};padding:56px 72px;font-family:Inter`;
 const WORDMARK = `<div style="display:flex;margin-left:auto;font-size:38px;font-weight:700;color:${GOLD};letter-spacing:0.5px">Year Atlas</div>`;
 
-function cardHtml({ y, name, alive, pct, openEnded, small }) {
-  const yLabel = openEnded ? `${y} or earlier` : `${y}`;
+function cardHtml({ y, unName, iso2, alive, pctRaw, openEnded, small }, t) {
+  const yLabel = openEnded ? t.orEarlier(y) : `${y}`;
+  const name = unName ? t.displayName(unName, iso2) : null;
+  const inPlace = unName ? t.placeIn(unName, iso2) : null;
   // FIXSPEC copy templates; the vintage line carries the "when" (folasade F2).
-  const sentence = name
-    ? `people living in ${esc(inSentence(name))} were born in ${yLabel}`
-    : `people alive right now were born in ${yLabel}`;
+  const sentence = t.cardSentence(alive, inPlace, yLabel);
   // NEVER survival/attrition on a country card (spec §4.2); rank line only.
-  const rank = name ? `older than ${pct}% of people in ${esc(inSentence(name))}` : `older than ${pct}% of the world`;
+  const rank = t.ogRank(t.fmtPct(pctRaw), inPlace);
   const caveat = small
-    ? `<div style="display:flex;font-size:30px;font-weight:400;color:${SOFT};margin-top:16px">Small population — estimates are noisy.</div>`
+    ? `<div style="display:flex;font-size:30px;font-weight:400;color:${SOFT};margin-top:16px">${esc(t.smallPop)}</div>`
     : "";
   return `
   <div style="${FRAME}">
     <div style="display:flex;width:100%;align-items:center">
-      <div style="display:flex;font-size:34px;font-weight:400;color:${SOFT}">${esc(name || "Worldwide")} · ${y}</div>
+      <div style="display:flex;font-size:34px;font-weight:400;color:${SOFT}">${esc(name || t.worldwideLabel)} · ${y}</div>
       ${WORDMARK}
     </div>
     <div style="display:flex;flex-direction:column">
       <div style="display:flex;align-items:baseline">
-        <div style="display:flex;font-size:44px;font-weight:400;color:${SOFT};margin-right:20px">about</div>
-        <div style="display:flex;font-size:120px;font-weight:700;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums">${fmtPeople(alive)}</div>
+        <div style="display:flex;font-size:44px;font-weight:400;color:${SOFT};margin-right:20px">${esc(t.cardAbout(alive))}</div>
+        <div style="display:flex;font-size:120px;font-weight:700;letter-spacing:-3px;line-height:1;font-variant-numeric:tabular-nums">${t.fmtPeople(alive)}</div>
       </div>
-      <div style="display:flex;font-size:42px;font-weight:400;color:${SOFT};margin-top:22px">${sentence}</div>
+      <div style="display:flex;font-size:42px;font-weight:400;color:${SOFT};margin-top:22px">${esc(sentence)}</div>
     </div>
     <div style="display:flex;flex-direction:column">
-      <div style="display:flex;font-size:42px;font-weight:700;color:${GOLD}">${rank}</div>
+      <div style="display:flex;font-size:42px;font-weight:700;color:${GOLD}">${esc(rank)}</div>
       ${caveat}
-      <div style="display:flex;font-size:26px;font-weight:400;color:${SOFT};margin-top:20px">mid-2026 · UN World Population Prospects 2024</div>
+      <div style="display:flex;font-size:26px;font-weight:400;color:${SOFT};margin-top:20px">${esc(t.cardVintage)}</div>
     </div>
   </div>`;
 }
 
-function genericCard() {
+function genericCard(t) {
   return `
   <div style="${FRAME};justify-content:center;align-items:center">
     <div style="display:flex;font-size:110px;font-weight:700;color:${GOLD};letter-spacing:-2px">Year Atlas</div>
-    <div style="display:flex;font-size:44px;font-weight:400;color:${SOFT};margin-top:28px">How many people alive today share your birth year?</div>
+    <div style="display:flex;font-size:44px;font-weight:400;color:${SOFT};margin-top:28px">${esc(t.genericQuestion)}</div>
   </div>`;
 }
 
@@ -167,22 +185,23 @@ function genericCard() {
 // ponytail: fetches the data assets per HTML request (no cache); ASSETS reads
 // are edge-local and cheap — add a cache.match layer if it ever shows up.
 async function rewriteMeta(res, url, env) {
-  const { y, c } = parseParams(url);
-  const stat = await getStat(env, url.origin, y, c);
-  const og = y !== null ? `${url.origin}/og?y=${y}${c ? `&c=${c}` : ""}` : `${url.origin}/og`;
+  const { y, c, lang } = parseParams(url);
+  const t = getLocale(lang);
+  const stat = await getStat(env, url.origin, y, c, lang);
+  const langQ = lang !== "en" ? `&lang=${lang}` : "";
+  const og = y !== null
+    ? `${url.origin}/og?y=${y}${c ? `&c=${c}` : ""}${langQ}`
+    : `${url.origin}/og${langQ ? `?${langQ.slice(1)}` : ""}`;
   let title, desc;
   if (stat) {
-    const yLabel = stat.openEnded ? `${stat.y} or earlier` : `${stat.y}`;
-    const n = fmtPeople(stat.alive);
-    title = stat.name
-      ? `Born in ${yLabel}, ${stat.name} — ${n} alive mid-2026 · Year Atlas`
-      : `Born in ${yLabel} — ${n} alive mid-2026 · Year Atlas`;
-    desc = stat.name
-      ? `About ${n} people living in ${inSentence(stat.name)} were born in ${yLabel} (mid-2026, UN projection).`
-      : `About ${n} people alive right now were born in ${yLabel} (mid-2026, UN projection).`;
+    const yLabel = stat.openEnded ? t.orEarlier(stat.y) : `${stat.y}`;
+    const name = stat.unName ? t.displayName(stat.unName, stat.iso2) : null;
+    const inPlace = stat.unName ? t.placeIn(stat.unName, stat.iso2) : null;
+    title = t.ogTitle(yLabel, name, stat.alive);
+    desc = t.ogDesc(stat.alive, inPlace, yLabel);
   } else {
-    title = "Year Atlas";
-    desc = "Enter a birth year and see how many people alive today share it.";
+    title = t.ogTitleDefault;
+    desc = t.ogDescDefault;
   }
   const tags =
     `<meta property="og:title" content="${esc(title)}">` +
@@ -201,6 +220,7 @@ async function rewriteMeta(res, url, env) {
     .on('meta[property="og:image:height"]', remove)
     .on('meta[name="twitter:card"]', remove)
     .on('meta[name="twitter:image"]', remove)
+    .on("html", { element(el) { el.setAttribute("lang", lang); } })
     .on("title", { element(el) { el.setInnerContent(title); } })
     .on("head", { element(el) { el.append(tags, { html: true }); } })
     .transform(res);
