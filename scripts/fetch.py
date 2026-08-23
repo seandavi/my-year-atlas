@@ -14,6 +14,11 @@ FILES = [
     "WPP2024_Demographic_Indicators_Medium.csv.gz",
 ]
 
+# NASA GISTEMP v4 global annual temperature anomaly (vs 1951-1980 baseline).
+# US government work — public domain. Updated monthly upstream.
+GISTEMP_URL = "https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv"
+GISTEMP_FILE = "gistemp_glb.csv"
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 RAW = ROOT / "data" / "raw"
 
@@ -37,6 +42,13 @@ def main():
         rows.append((name, dest.stat().st_size, sha256(dest)))
         print(f"  {name}  {rows[-1][1]:,} bytes  sha256={rows[-1][2]}")
 
+    gt = RAW / GISTEMP_FILE
+    if not gt.exists():
+        print(f"downloading {GISTEMP_FILE} …")
+        urllib.request.urlretrieve(GISTEMP_URL, gt)
+    rows.append((GISTEMP_FILE, gt.stat().st_size, sha256(gt)))
+    print(f"  {GISTEMP_FILE}  {rows[-1][1]:,} bytes  sha256={rows[-1][2]}")
+
     sources = ROOT / "data" / "SOURCES.md"
     with open(sources, "w") as f:
         f.write("# Data sources\n\n")
@@ -45,6 +57,11 @@ def main():
         f.write("License: [CC BY 3.0 IGO](https://creativecommons.org/licenses/by/3.0/igo/). ")
         f.write("Citation: United Nations, Department of Economic and Social Affairs, "
                 "Population Division (2024). *World Population Prospects 2024*.\n\n")
+        f.write("**NASA GISTEMP v4** — global annual surface temperature anomaly "
+                "vs the 1951–1980 baseline, from "
+                f"`{GISTEMP_URL}`. US government work, public domain. "
+                "Citation: GISTEMP Team, GISS Surface Temperature Analysis, "
+                "NASA Goddard Institute for Space Studies.\n\n")
         f.write("| file | bytes | sha256 |\n|---|---|---|\n")
         for name, size, digest in rows:
             f.write(f"| `{name}` | {size:,} | `{digest}` |\n")

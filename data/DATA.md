@@ -37,6 +37,19 @@ flag marks the 100+ bucket: its `birth_year` means "born in or before".
 | USA born 1971 alive | 4,297,760 |
 | UAE born 1985: alive / births-there | 232,060 / 39,301 (migration, ratio 5.9) |
 
+## Context fields (added 2026-08-23)
+
+`world-now.json` and `now/{ISO3}.json` rows also carry the year-you-were-born
+context (null before 1950): `imr` (infant deaths per 1,000 live births that
+year), `median_age` (of the whole population that year), `tfr` (total
+fertility rate). Same UN indicators file, same CC BY 3.0 IGO license.
+Life expectancy is deliberately NOT included (§9 framing; DATA_EXPANSION.md §1).
+
+### `climate.json` — global annual temperature anomaly
+`[{year, anomaly}]`, 1880–2025, °C vs the **1951–1980 baseline** (NASA
+GISTEMP v4, public domain). Display comparisons as birth-year anomaly vs the
+mean of the latest five complete years — never as a forecast.
+
 ## Attribution (must appear in the UI)
 
 United Nations, DESA, Population Division. *World Population Prospects 2024*,

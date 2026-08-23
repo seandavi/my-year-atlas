@@ -49,6 +49,21 @@ FROM ind_raw
 WHERE keep_loc(LocTypeName, ISO3_code, LocID) AND Births IS NOT NULL;
 
 ------------------------------------------------------------------
+-- context: what the place was like the year you were born.
+-- IMR per 1,000, median age, TFR (docs/DATA_EXPANSION.md §1 — LEx
+-- deliberately excluded from the app slices; §9 framing).
+------------------------------------------------------------------
+CREATE TABLE context AS
+SELECT
+  CASE WHEN LocID = 900 THEN 'WLD' ELSE ISO3_code END AS iso3,
+  Time::SMALLINT                                      AS year,
+  round(IMR, 1)                                       AS imr,
+  round(MedianAgePop, 1)                              AS median_age,
+  round(TFR, 2)                                       AS tfr
+FROM ind_raw
+WHERE keep_loc(LocTypeName, ISO3_code, LocID);
+
+------------------------------------------------------------------
 -- rank_index: cumulative people younger than each cohort.
 -- "younger" = born in a later calendar year.
 ------------------------------------------------------------------
@@ -90,6 +105,7 @@ FROM (SELECT sum(alive) AS total FROM cohorts
 COPY cohorts    TO 'data/derived/cohorts.parquet'    (FORMAT PARQUET, COMPRESSION ZSTD);
 COPY births     TO 'data/derived/births.parquet'     (FORMAT PARQUET, COMPRESSION ZSTD);
 COPY rank_index TO 'data/derived/rank_index.parquet' (FORMAT PARQUET, COMPRESSION ZSTD);
+COPY context    TO 'data/derived/context.parquet'    (FORMAT PARQUET, COMPRESSION ZSTD);
 
 -- App slice: everything the first paint needs, one fetch.
 -- SNAPPY because hyparquet reads it without extra decompressors.
@@ -105,14 +121,24 @@ COPY (
   ORDER BY c.iso3, c.birth_year
 ) TO 'site/public/data/cohorts-now.parquet' (FORMAT PARQUET, COMPRESSION SNAPPY);
 
+-- Global temperature anomaly per year (NASA GISTEMP v4, 1951-1980 baseline).
+COPY (
+  SELECT Year::SMALLINT AS year, TRY_CAST("J-D" AS DOUBLE) AS anomaly
+  FROM read_csv('data/raw/gistemp_glb.csv', skip = 1, header = true, all_varchar = true)
+  WHERE TRY_CAST("J-D" AS DOUBLE) IS NOT NULL
+  ORDER BY year
+) TO 'site/public/data/climate.json' (FORMAT JSON, ARRAY true);
+
 -- World-only slice as JSON for the first paint: the default view needs
 -- ~100 rows, so the critical path carries no parquet reader at all.
 COPY (
   SELECT c.birth_year, c.alive, c.alive_male, c.alive_female, c.open_ended,
-         r.cum_alive_younger, r.total_alive, b.births
+         r.cum_alive_younger, r.total_alive, b.births,
+         x.imr, x.median_age, x.tfr
   FROM cohorts c
   JOIN rank_index r USING (iso3, ref_year, birth_year)
   LEFT JOIN births b ON b.iso3 = c.iso3 AND b.year = c.birth_year
+  LEFT JOIN context x ON x.iso3 = c.iso3 AND x.year = c.birth_year
   WHERE c.iso3 = 'WLD' AND c.ref_year = getvariable('ref_now')
   ORDER BY c.birth_year
 ) TO 'site/public/data/world-now.json' (FORMAT JSON, ARRAY true);
@@ -132,10 +158,11 @@ COPY (
 COPY (
   SELECT 'COPY (SELECT c.iso3, c.location_name, c.birth_year, c.alive, '
       || 'c.alive_male, c.alive_female, c.open_ended, r.cum_alive_younger, '
-      || 'r.total_alive, b.births '
+      || 'r.total_alive, b.births, x.imr, x.median_age, x.tfr '
       || 'FROM ''data/derived/cohorts.parquet'' c '
       || 'JOIN ''data/derived/rank_index.parquet'' r USING (iso3, ref_year, birth_year) '
       || 'LEFT JOIN ''data/derived/births.parquet'' b ON b.iso3 = c.iso3 AND b.year = c.birth_year '
+      || 'LEFT JOIN ''data/derived/context.parquet'' x ON x.iso3 = c.iso3 AND x.year = c.birth_year '
       || 'WHERE c.ref_year = ' || getvariable('ref_now')
       || ' AND c.iso3 = ''' || iso3 || ''' ORDER BY c.birth_year) '
       || 'TO ''site/public/data/now/' || iso3 || '.json'' (FORMAT JSON, ARRAY true);'
