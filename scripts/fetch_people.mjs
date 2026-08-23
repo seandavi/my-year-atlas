@@ -41,13 +41,18 @@ for (const y of YEARS) {
   const cache = `${RAW}/${y}.json`;
   if (!existsSync(cache)) {
     process.stdout.write(`${y} `);
-    const res = await fetch(
-      'https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(query(y)),
-      { headers: { 'User-Agent': UA } },
-    );
-    if (!res.ok) throw new Error(`${res.status} for ${y}`);
+    let res;
+    for (let attempt = 0; ; attempt++) {
+      res = await fetch(
+        'https://query.wikidata.org/sparql?format=json&query=' + encodeURIComponent(query(y)),
+        { headers: { 'User-Agent': UA } },
+      );
+      if (res.ok) break;
+      if (attempt >= 4) throw new Error(`${res.status} for ${y} after ${attempt + 1} tries`);
+      await sleep(15000 * (attempt + 1)); // WDQS rate limit: back off hard
+    }
     writeFileSync(cache, await res.text());
-    await sleep(1500);
+    await sleep(2500);
   }
   const rows = JSON.parse(readFileSync(cache, 'utf8')).results.bindings;
   const FEMALE = 'Q6581072', MALE = 'Q6581097';

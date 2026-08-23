@@ -110,3 +110,20 @@ All retrievals: **2026-08-23**.
 - **Netherlands** — database right asserted; **Germany** — no official
   register; **Italy** — query tool only, no bulk file; **Denmark** — manual;
   **Finland** — no year dimension. (Per DATA_EXPANSION.md Addendum 4 survey.)
+
+## Brazil (BRA) — added 2026-08-23
+
+- **Dataset:** IBGE, Censo Demográfico 2010, "Nomes no Brasil" ranking API
+  (`servicodados.ibge.gov.br/api/v2/censos/nomes/ranking?decada=&sexo=`).
+- **Basis:** decade of birth, self-reported in the 2010 census (`granularity:
+  "decade"` — every year of a decade carries the decade list; UI copy must say
+  "born in the 1970s", not "born in 1971"). Coverage 1930–2009.
+- **License/terms:** IBGE open data, attribution required.
+- **Quirk:** IBGE normalizes names to unaccented forms ("Jose", "Joao");
+  emitted as published rather than re-accenting.
+
+## Portugal — checked, unavailable
+
+dados.gov.pt has no first-names dataset (searched 2026-08-23; only toponymy).
+The IRN publishes recent-year "nomes mais registados" as news posts/PDFs —
+no bulk dataset, no stated license. Revisit if IRN publishes properly.

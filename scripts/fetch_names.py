@@ -283,9 +283,35 @@ def bel():
     raise NotImplementedError("add xlsx parsing once files are obtainable")
 
 
+
+def bra():
+    """Brazil — IBGE Censo 2010 'Nomes no Brasil' API: top names by DECADE of
+    birth x sex (self-reported in the census). Decade granularity: every year
+    of a decade carries its decade's list; the UI must say 'born in the 1970s'.
+    Terms: IBGE open data, attribution required."""
+    years = {}
+    for dec in range(1930, 2010, 10):
+        by_sex = {}
+        for sex, key in (("F", "f"), ("M", "m")):
+            raw = fetch(
+                f"https://servicodados.ibge.gov.br/api/v2/censos/nomes/ranking?decada={dec}&sexo={sex}",
+                f"bra_{dec}_{sex}.json")
+            rows = json.loads(raw.read_text(encoding="utf-8"))[0]["res"]
+            by_sex[key] = [titlecase(r["nome"]) for r in rows[:5]]
+        for y in range(dec, dec + 10):
+            years[y] = dict(by_sex)
+    return {
+        "source": "IBGE, Censo Demografico 2010 (Nomes no Brasil)",
+        "url": "https://censo2010.ibge.gov.br/nomes/",
+        "license": "IBGE open data, attribution required",
+        "basis": "birth",
+        "granularity": "decade",
+        "years": years,
+    }
+
 COUNTRIES = [
     ("USA", usa), ("FRA", fra), ("SCT", sct), ("IRL", irl),
-    ("NOR", nor), ("AUT", aut), ("CAN", can), ("NZL", nzl), ("BEL", bel),
+    ("NOR", nor), ("AUT", aut), ("CAN", can), ("NZL", nzl), ("BEL", bel), ("BRA", bra),
 ]
 
 
@@ -310,7 +336,19 @@ def main():
                        encoding="utf-8")
         ys = sorted(emit_years)
         index[iso3] = {"from": ys[0], "to": ys[-1], "basis": data["basis"]}
+        if "granularity" in data:
+            index[iso3]["granularity"] = data["granularity"]
         print(f"{iso3}: {ys[0]}-{ys[-1]} ({len(ys)} years, {out.stat().st_size // 1024} KB)")
+    # countries with an existing output but a failed re-fetch keep their entry
+    for f in OUT.glob("*.json"):
+        iso3 = f.stem
+        if iso3 == "index" or iso3 in index:
+            continue
+        d = json.loads(f.read_text(encoding="utf-8"))
+        ys = sorted(int(y) for y in d["years"])
+        index[iso3] = {"from": ys[0], "to": ys[-1], "basis": d["basis"]}
+        if "granularity" in d:
+            index[iso3]["granularity"] = d["granularity"]
     (OUT / "index.json").write_text(json.dumps(index, separators=(",", ":")), encoding="utf-8")
 
     # spot checks
