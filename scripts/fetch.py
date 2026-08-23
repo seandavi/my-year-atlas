@@ -57,6 +57,10 @@ def main():
         f.write("License: [CC BY 3.0 IGO](https://creativecommons.org/licenses/by/3.0/igo/). ")
         f.write("Citation: United Nations, Department of Economic and Social Affairs, "
                 "Population Division (2024). *World Population Prospects 2024*.\n\n")
+        f.write("**Natural Earth 110m country geometry** — via the `world-atlas@2` "
+                "package (`countries-110m.json`, jsDelivr). Natural Earth is in the "
+                "public domain. Projected to Equal Earth at build time by "
+                "`scripts/build_map.mjs`.\n\n")
         f.write("**NASA GISTEMP v4** — global annual surface temperature anomaly "
                 "vs the 1951–1980 baseline, from "
                 f"`{GISTEMP_URL}`. US government work, public domain. "
