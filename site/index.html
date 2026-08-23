@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Year Atlas — everyone born in your year</title>
+  <meta name="description" content="Enter your birth year and see how many people alive on Earth right now share it. UN data, no signup.">
+  <link rel="preload" href="/data/world-now.json" as="fetch" crossorigin>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23e8b64c'/%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="top">
+    <span class="wordmark">Year Atlas</span>
+    <span class="tag">Everyone born in your year.</span>
+  </header>
+
+  <main>
+    <form id="controls" autocomplete="off">
+      <label for="year">Year you were born</label>
+      <input id="year" name="y" type="number" inputmode="numeric"
+             min="1926" max="2026" placeholder="1971" aria-describedby="year-hint">
+      <label for="country">Country <span class="muted">(optional)</span></label>
+      <input id="country" name="c" list="countries" placeholder="World">
+      <datalist id="countries"></datalist>
+      <span id="year-hint" class="visually-hidden">A year between 1926 and 2026</span>
+    </form>
+
+    <section id="answer" aria-live="polite">
+      <p class="invite">Type the year you were born.</p>
+    </section>
+
+    <section id="dotfield-section" hidden>
+      <canvas id="dotfield" role="img"></canvas>
+      <p class="caption" id="dotfield-caption"></p>
+    </section>
+
+    <section id="details" hidden>
+      <div id="trajectory"></div>
+      <div id="contrast"></div>
+      <div id="bigger"></div>
+      <p class="actions"><button id="download" type="button">Download image</button></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Figures for mid-2026 are a UN projection (medium variant), not a count.
+       <a href="/methods.html">How we count</a>.</p>
+    <p>Source: <a href="https://population.un.org/wpp/">United Nations, World
+       Population Prospects 2024</a> (medium variant), CC BY 3.0 IGO.</p>
+  </footer>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
