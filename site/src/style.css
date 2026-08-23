@@ -1,14 +1,25 @@
 /* Year Atlas — one idea: a night sky of people. Ink navy, one gold accent.
-   Three type sizes, 8px spacing scale, tabular figures everywhere data appears. */
+   Instrument Serif (self-hosted subset) for the headline number and wordmark;
+   system-ui for everything else. 8px spacing scale, tabular figures in data
+   tables (proportional in the display number, where tabular would gap). */
+
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("/fonts/instrument-serif-subset.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --bg: #f5f6f8;
   --ink: #131f36;
   --ink-soft: #4a5670;
-  --gold: #b07c1e;        /* accent, darkened for light-mode contrast */
+  --gold: #8a5f13;        /* accent, 5.2:1 on --bg (WCAG AA at body sizes) */
   --dot: #131f36;
-  --dot-dim: rgba(19, 31, 54, 0.28);
+  --dot-dim: rgba(19, 31, 54, 0.55);
   --line: rgba(19, 31, 54, 0.14);
+  --line-strong: rgba(19, 31, 54, 0.36);
   --card: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
@@ -17,9 +28,11 @@
     --ink: #eef1f7;
     --ink-soft: #9aa6bd;
     --gold: #e8b64c;
-    --dot: #e8b64c;
-    --dot-dim: rgba(232, 182, 76, 0.30);
+    --dot: #eef1f7;
+    /* same encoding as light mode: neutral dim field, gold user column */
+    --dot-dim: rgba(238, 241, 247, 0.45);
     --line: rgba(238, 241, 247, 0.14);
+    --line-strong: rgba(238, 241, 247, 0.34);
     --card: #131c30;
   }
 }
@@ -40,17 +53,18 @@ a:hover { color: var(--gold); }
 
 .top { display: flex; align-items: baseline; gap: 16px; margin-bottom: 40px; flex-wrap: wrap; }
 .wordmark {
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-size: 1.25rem;
+  font-family: "Instrument Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: 1.5rem;
+  letter-spacing: 0;
 }
 .wordmark::before {
   content: "";
   display: inline-block;
-  width: 0.55em; height: 0.55em;
+  width: 0.5em; height: 0.5em;
   border-radius: 50%;
   background: var(--gold);
-  margin-right: 0.45em;
+  margin-right: 0.4em;
 }
 .tag, .muted, .caption, .note { color: var(--ink-soft); }
 
@@ -63,35 +77,59 @@ a:hover { color: var(--gold); }
   margin-bottom: 40px;
   max-width: 28rem;
 }
+@media (max-width: 26rem) {
+  #controls { grid-template-columns: 1fr; }
+}
 #controls label { font-size: 0.85rem; }
 #controls input {
   font: inherit;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   background: var(--card);
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: 8px;
   padding: 8px 12px;
   width: 100%;
+  min-width: 0;
 }
+.stepper { display: flex; gap: 8px; align-items: stretch; }
+.stepper input { flex: 1; -moz-appearance: textfield; }
+.stepper input::-webkit-outer-spin-button,
+.stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.stepper button {
+  font: inherit;
+  font-weight: 650;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  width: 40px;
+  cursor: pointer;
+  flex: none;
+}
+.field-error { grid-column: 1 / -1; font-size: 0.85rem; }
+.field-error:empty { display: none; }
 #controls input:focus-visible,
 button:focus-visible,
+summary:focus-visible,
 a:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 
 /* --- answer --- */
-.invite { font-size: 1.5rem; color: var(--ink-soft); }
+.invite { font-size: 1.5rem; color: var(--ink-soft); margin-bottom: 24px; }
+.headline { font-size: 1.125rem; max-width: 36rem; overflow-wrap: anywhere; }
 .big {
-  font-size: clamp(3rem, 13vw, 6.5rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  display: block;
+  font-family: "Instrument Serif", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2.75rem, 12vw, 6rem);
+  letter-spacing: -0.01em;
   line-height: 1.05;
-  font-variant-numeric: tabular-nums;
+  margin-bottom: 8px;
 }
-#answer .lede { margin-top: 8px; font-size: 1.125rem; max-width: 36rem; }
-#answer .lede strong { color: var(--gold); font-weight: 650; }
+.headline strong { color: var(--gold); font-weight: 650; }
 .note { font-size: 0.85rem; margin-top: 8px; }
 
 /* --- dot field --- */
@@ -99,8 +137,14 @@ a:focus-visible {
 #dotfield { width: 100%; display: block; }
 .caption { font-size: 0.85rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
 
+/* --- view-as-table disclosures --- */
+.viz-table { margin-top: 8px; font-size: 0.85rem; }
+.viz-table summary { color: var(--ink-soft); cursor: pointer; }
+.viz-table table { margin-top: 8px; max-width: 24rem; }
+.viz-table td, .viz-table th { padding: 4px 16px 4px 0; }
+
 /* --- detail sections --- */
-#details > div { margin-top: 48px; }
+#details > div:not(:empty) { margin-top: 48px; }
 h2 {
   font-size: 0.8rem;
   font-weight: 650;
@@ -118,8 +162,8 @@ tr.you td { color: var(--gold); font-weight: 650; }
 
 #trajectory svg { width: 100%; height: auto; display: block; }
 
-.actions { margin-top: 48px; }
-button {
+.actions { margin-top: 24px; }
+.actions button {
   font: inherit;
   font-weight: 650;
   color: var(--bg);
@@ -129,7 +173,7 @@ button {
   padding: 10px 20px;
   cursor: pointer;
 }
-button:hover { background: var(--gold); color: #0c1322; }
+.actions button:hover { background: var(--gold); color: var(--bg); }
 
 footer { margin-top: 64px; font-size: 0.85rem; color: var(--ink-soft); }
 footer p { margin-top: 8px; }

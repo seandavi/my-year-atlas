@@ -1,5 +1,6 @@
 // Lazy data layer: hyparquet lives only in this chunk, dynamically imported
-// after first paint. Never on the critical path.
+// when the trajectory chart scrolls into view. Never on the critical path —
+// the "now" data is plain JSON (/data/now/{ISO3}.json, /data/contrast.json).
 import { parquetReadObjects } from 'hyparquet';
 import trajManifest from './traj-manifest.json';
 
@@ -7,16 +8,6 @@ async function fetchParquet(url, columns) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${res.status} fetching ${url}`);
   return parquetReadObjects({ file: await res.arrayBuffer(), columns });
-}
-
-let cohortsPromise;
-/** Full 2026 slice, all locations. Cached after first load. */
-export function loadCohorts() {
-  cohortsPromise ??= fetchParquet('/data/cohorts-now.parquet', [
-    'iso3', 'location_name', 'birth_year', 'alive', 'open_ended',
-    'cum_alive_younger', 'total_alive', 'births',
-  ]);
-  return cohortsPromise;
 }
 
 const trajCache = new Map();

@@ -96,20 +96,27 @@ export function biggerCohorts(rows, birthYear) {
 
 // --- formatting helpers (used by UI and share card) ---
 
-export function fmt(n) {
-  return Math.round(n).toLocaleString('en-US');
+/**
+ * FIXSPEC display formatter: people-counts never carry more than 3
+ * significant figures. "91.1 million", "4.3 million", "232,000", "850".
+ */
+export function fmtPeople(n) {
+  n = Number(n);
+  const m = Number((n / 1e6).toPrecision(3));
+  if (n >= 1e9 || m >= 1000) return `${Number((n / 1e9).toPrecision(3))} billion`;
+  if (n >= 1e6) return `${m} million`;
+  if (n >= 1e5) return (Math.round(n / 1000) * 1000).toLocaleString('en-US');
+  if (n >= 1e3) return (Math.round(n / 100) * 100).toLocaleString('en-US');
+  return String(Math.round(n / 10) * 10);
 }
 
-/** "91.1 million", "8.3 billion", "232,060" */
-export function fmtCompact(n) {
-  if (n >= 1e9) return `${(n / 1e9).toFixed(1)} billion`;
-  if (n >= 1e6) return `${(n / 1e6).toFixed(1)} million`;
-  return fmt(n);
-}
-
-export function fmtPct(x, digits = 1) {
-  let v = (x * 100).toFixed(digits);
-  // a true fraction should never display as 100% ("older than 100.0%")
-  if (x < 1 && parseFloat(v) >= 100) v = (100 - 10 ** -digits).toFixed(digits);
+/**
+ * FIXSPEC percentile display: whole number, clamped so a true fraction never
+ * reads as 100% or 0%. Returns the "%" with it ("83%", "more than 99%").
+ */
+export function fmtPctWhole(x) {
+  const v = Math.round(x * 100);
+  if (v >= 100) return 'more than 99%';
+  if (v <= 0) return 'less than 1%';
   return `${v}%`;
 }

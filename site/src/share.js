@@ -1,10 +1,17 @@
-// Client-side share card: 1200×630 rendered at 2x. Headline number, rank
-// line, birth year, country, wordmark — nothing else (spec §8).
-import { fmt } from './stats.js';
+// Client-side share card: 1200×630 rendered at 2x. FIXSPEC copy templates and
+// display formatting; site dark palette (spec §8, FIXSPEC card tokens).
+import { fmtPeople, fmtPctWhole } from './stats.js';
+import { shortName, inSentence } from './names.js';
 
 const INK = '#0c1322', PAPER = '#eef1f7', GOLD = '#e8b64c', SOFT = '#9aa6bd';
+const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+const DISPLAY = `"Instrument Serif", Georgia, ${SANS}`;
 
-export function renderShareCanvas({ alive, rankLine, year, placeName }) {
+/**
+ * data: { alive, pct, year, yearLabel, iso3, locationName } —
+ * locationName is the UN name (null for the world view).
+ */
+export function renderShareCanvas({ alive, pct, yearLabel, locationName }) {
   const W = 1200, H = 630, S = 2; // 2x for crisp downloads
   const canvas = document.createElement('canvas');
   canvas.width = W * S;
@@ -15,66 +22,105 @@ export function renderShareCanvas({ alive, rankLine, year, placeName }) {
   ctx.fillStyle = INK;
   ctx.fillRect(0, 0, W, H);
 
-  // quiet deterministic dot texture, thinning to the right
-  let seed = year;
+  // quiet deterministic dot texture
+  let seed = 2026;
   const rand = () => ((seed = (seed * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
-  ctx.fillStyle = 'rgba(232, 182, 76, 0.16)';
-  for (let i = 0; i < 320; i++) {
-    const x = rand() * W;
-    const y = rand() * H;
-    if (rand() < x / W - 0.15) continue;
+  ctx.fillStyle = 'rgba(232, 182, 76, 0.12)';
+  for (let i = 0; i < 260; i++) {
     ctx.beginPath();
-    ctx.arc(x, y, 2.4, 0, Math.PI * 2);
+    ctx.arc(rand() * W, rand() * H, 2.4, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  const font = (w, px) => `${w} ${px}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+  const font = (w, px, family = SANS) => `${w} ${px}px ${family}`;
 
-  // wordmark
+  // wordmark: gold, weight 700 (FIXSPEC)
   ctx.fillStyle = GOLD;
   ctx.beginPath();
   ctx.arc(72, 74, 9, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = PAPER;
-  ctx.font = font(800, 30);
+  ctx.font = font(700, 30, DISPLAY);
   ctx.textBaseline = 'middle';
   ctx.fillText('Year Atlas', 94, 76);
 
-  // headline number, fitted
-  const headline = fmt(alive);
-  let px = 150;
-  ctx.font = font(800, px);
+  // headline number ("about {N}"), fitted, in the display face
+  ctx.fillStyle = SOFT;
+  ctx.font = font(400, 36);
+  ctx.fillText('about', 66, 168);
+  const headline = fmtPeople(alive);
+  let px = 170;
+  ctx.font = font(400, px, DISPLAY);
   while (ctx.measureText(headline).width > W - 128 && px > 60) {
     px -= 6;
-    ctx.font = font(800, px);
+    ctx.font = font(400, px, DISPLAY);
   }
   ctx.fillStyle = PAPER;
-  ctx.fillText(headline, 64, 300);
+  ctx.fillText(headline, 64, 190 + px * 0.5);
 
+  // sentence: country template names the place inside the claim (tereza P0-1)
+  const sentence = locationName
+    ? `people living in ${inSentence(locationName)} were born in ${yearLabel}`
+    : `people alive right now were born in ${yearLabel}`;
   ctx.fillStyle = GOLD;
-  ctx.font = font(600, 40);
-  ctx.fillText(`people alive now were born in ${year}`, 64, 300 + px * 0.75);
+  let sp = 40;
+  ctx.font = font(600, sp);
+  while (ctx.measureText(sentence).width > W - 128 && sp > 24) ctx.font = font(600, (sp -= 2));
+  ctx.fillText(sentence, 64, Math.min(190 + px * 1.1 + 28, 460));
 
+  // rank line: no dangling "there" — the place or "the world" is in the line
+  const rankLine = locationName
+    ? `Older than ${fmtPctWhole(pct)} of people in ${shortName(locationName)}.`
+    : `Older than ${fmtPctWhole(pct)} of the world.`;
   ctx.fillStyle = PAPER;
   let rp = 34;
   ctx.font = font(400, rp);
   while (ctx.measureText(rankLine).width > W - 128 && rp > 20) ctx.font = font(400, (rp -= 2));
   ctx.fillText(rankLine, 64, 505);
 
+  // vintage line, exactly as FIXSPEC
   ctx.fillStyle = SOFT;
-  ctx.font = font(600, 30);
-  ctx.fillText(placeName, 64, 566);
+  ctx.font = font(400, 24);
+  ctx.fillText('mid-2026 · UN World Population Prospects 2024', 64, 572);
 
   return canvas;
 }
 
-export function downloadShareImage(data) {
+async function cardBlob(data) {
+  try {
+    await document.fonts.load('400 170px "Instrument Serif"');
+  } catch { /* fall back to system faces */ }
   const canvas = renderShareCanvas(data);
-  canvas.toBlob((blob) => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `year-atlas-${data.year}${data.iso3 ? `-${data.iso3}` : ''}.png`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }, 'image/png');
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+}
+
+export function cardFilename(data) {
+  return `year-atlas-${data.year}${data.iso3 ? `-${data.iso3}` : ''}.png`;
+}
+
+/**
+ * Share via the native sheet when files are supported (rhea FR-1), otherwise
+ * download. Returns a status string for the role="status" region.
+ */
+export async function shareImage(data) {
+  const blob = await cardBlob(data);
+  const name = cardFilename(data);
+  const file = new File([blob], name, { type: 'image/png' });
+  const text = data.locationName
+    ? `About ${fmtPeople(data.alive)} people living in ${inSentence(data.locationName)} were born in ${data.yearLabel} — Year Atlas`
+    : `About ${fmtPeople(data.alive)} people alive right now were born in ${data.yearLabel} — Year Atlas`;
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], text, url: location.href });
+      return 'Shared.';
+    } catch (e) {
+      if (e.name === 'AbortError') return '';
+      // fall through to download
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  return `Saved ${name}.`;
 }
