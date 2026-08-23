@@ -56,6 +56,39 @@ function loadClimate() {
   return climatePromise;
 }
 
+// people.json (Wikidata, CC0): notable people per birth year, ranked by
+// Wikipedia language-edition count. Off the critical path like climate.json.
+let people = null, peoplePromise;
+function loadPeople() {
+  peoplePromise ??= fetch(import.meta.env.BASE_URL + 'data/people.json')
+    .then((r) => r.json()).then((d) => { people = d; return d; })
+    .catch(() => (people = {}));
+  return peoplePromise;
+}
+
+async function renderPeople(y) {
+  const el = $('people');
+  if (!y) { el.hidden = true; el.innerHTML = ''; return; }
+  if (!people) await loadPeople();
+  if (y !== state.year) return; // year changed while loading
+  const list = (people[y] ?? []).slice(0, 6);
+  if (!list.length) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = `<h2>In your company</h2>
+    <p>${y} also brought ${list.map(([name, desc]) =>
+      `<strong>${esc(name)}</strong>${desc ? ` (${esc(shortDesc(desc))})` : ''}`).join(', ')}.</p>
+    <p class="note">Ranked by Wikipedia language editions — one measure of fame among many.</p>`;
+}
+
+// "American singer-songwriter and actress" -> "singer-songwriter" is too
+// lossy; just trim to the first clause and lowercase the lead-in.
+function shortDesc(d) {
+  const first = d.split(/[;,] | and /)[0].trim();
+  return first.length > 40 ? `${first.slice(0, 40)}…` : first;
+}
+
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 let contrastPromise;
 function loadContrast() {
   contrastPromise ??= fetch(import.meta.env.BASE_URL + 'data/contrast.json').then((r) => r.json())
@@ -110,6 +143,7 @@ function renderAnswer() {
   const el = $('answer');
   updateTitle();
   renderContext(currentRows(), state.year); // hides itself when there's nothing to say
+  renderPeople(state.year); // async; hides itself when there's no list
   if (!state.year) {
     el.innerHTML = '<p class="invite">Type the year you were born.</p>';
     $('share-actions').hidden = true;
@@ -267,6 +301,17 @@ function renderBigger(rows, y) {
     return;
   }
   const top = bigger.slice(0, 5);
+  // When the top cohorts all round to the same display value, a table of
+  // identical rows reads as a bug — say it as one sentence instead.
+  const displays = new Set(top.map((b) => fmtPeople(b.alive)));
+  if (top.length >= 3 && displays.size === 1) {
+    const years = top.map((b) => b.birth_year).sort();
+    el.innerHTML = `<h2>Bigger cohorts</h2>
+      <p>${opener} The largest cohorts alive today were all born between ${years[0]}
+      and ${years.at(-1)} — about ${[...displays][0]} people each, around
+      ${top[0].ratio.toFixed(1)}× your year.</p>`;
+    return;
+  }
   el.innerHTML = `<h2>Bigger cohorts</h2>
     <p>${opener} These birth years are larger:</p>
     <table>
