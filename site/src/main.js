@@ -2,7 +2,7 @@ import './style.css';
 import {
   findYear, cohortSizeNow, originalCohortSize, shareStillLiving,
   ageRankPercentile, cohortTrajectory, passportContrast, pickContrastCountries,
-  biggerCohorts, fmtPeople, fmtPctWhole,
+  biggerCohorts, fmtPeople, fmtPctWhole, medianBirthYear, climateDelta,
 } from './stats.js';
 import { renderDotField, trajectorySVG } from './dots.js';
 import { shortName, inSentence } from './names.js';
@@ -45,6 +45,15 @@ function loadCountry(iso3) {
     }).then((rows) => { countryRows[iso3] = rows; return rows; }));
   }
   return countryLoading.get(iso3);
+}
+
+// climate.json is tiny (~4KB) and off the critical path: fetched the first
+// time the context panel renders, after first paint.
+let climate = null, climatePromise;
+function loadClimate() {
+  climatePromise ??= fetch(import.meta.env.BASE_URL + 'data/climate.json')
+    .then((r) => r.json()).then((rows) => { climate = rows; return rows; });
+  return climatePromise;
 }
 
 let contrastPromise;
@@ -100,6 +109,7 @@ function populationAnchor(n) {
 function renderAnswer() {
   const el = $('answer');
   updateTitle();
+  renderContext(currentRows(), state.year); // hides itself when there's nothing to say
   if (!state.year) {
     el.innerHTML = '<p class="invite">Type the year you were born.</p>';
     $('share-actions').hidden = true;
@@ -129,12 +139,21 @@ function renderAnswer() {
   const pct = ageRankPercentile(rows, y);
   const yl = yearLabel(row, y);
   const parts = [];
+  // median birth year is a world stat, shown next to the rank line in both views
+  let medianLine = '';
+  if (world) {
+    const mY = medianBirthYear(world);
+    const side = y < mY ? "you're in the older half"
+      : y > mY ? "you're in the younger half" : "you're right at the middle";
+    medianLine = `<p class="note">Half of everyone alive today was born after ${mY} — ${side}.</p>`;
+  }
   parts.push(`<h2 class="visually-hidden">People born in ${yl}${state.iso3 ? ` in ${placeIn()}` : ''}</h2>`);
   // headline + sentence as ONE element so the number never orphans (marcus P1-2)
   if (state.iso3) {
     parts.push(`<p class="headline"><span class="big">about ${fmtPeople(alive)}</span>
       people living in ${placeIn()} were born in <strong>${yl}</strong> —
       you're older than <strong>${fmtPctWhole(pct)}</strong> of people there (mid-2026, UN projection).</p>`);
+    parts.push(medianLine);
     parts.push(`<p class="note">This counts today's residents born anywhere — people move.
       It can even be larger than the number of babies born in ${placeIn()} in ${y},
       so it's not a survival rate.</p>`);
@@ -145,6 +164,7 @@ function renderAnswer() {
     parts.push(`<p class="headline"><span class="big">about ${fmtPeople(alive)}</span>
       people alive right now were born in <strong>${yl}</strong> —
       you're older than <strong>${fmtPctWhole(pct)}</strong> of everyone on Earth (mid-2026, UN projection).</p>`);
+    parts.push(medianLine);
     const anchor = populationAnchor(alive);
     if (anchor) parts.push(`<p class="note">That's about the population of ${anchor}.</p>`);
     const births = originalCohortSize(rows, y);
@@ -175,6 +195,44 @@ function renderAnswer() {
   renderBigger(rows, y);
   if (detailsWanted) renderDetails();
   if (trajWanted) renderTrajectory();
+}
+
+// issue #9/#15: birth-year context panel. Quiet, factual, below the answer.
+// Indicators are null before 1950 → the panel is simply absent (§9: no drama).
+function renderContext(rows, y) {
+  const el = $('context');
+  const row = y ? findYear(rows ?? [], y) : null;
+  if (!row || row.imr == null) {
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  const s = [];
+  if (state.iso3) {
+    const wimr = world ? findYear(world, y)?.imr : null;
+    // ponytail: one world clause, only where the gap is big enough to read
+    const cmp = wimr != null && Math.abs(row.imr - wimr) >= 10
+      ? ` — worldwide it was ${Math.round(wimr)}` : '';
+    s.push(`In ${placeIn()} in ${y}, about ${Math.round(row.imr)} of every 1,000 babies did not reach their first birthday${cmp}.`);
+  } else {
+    s.push(`In ${y}, about ${Math.round(row.imr)} of every 1,000 babies worldwide did not reach their first birthday.`);
+  }
+  s.push(`The median person around you was ${Math.round(row.median_age)} years old.`);
+  s.push(`The average woman had about ${Number(row.tfr).toFixed(1)} children over her lifetime.`);
+  el.hidden = false;
+  el.innerHTML = `<h2>The ${state.iso3 ? placeName() : 'world'} you arrived in</h2>
+    <p>${s.join(' ')} <span id="climate-line"></span></p>`;
+  const setClimate = () => {
+    const span = $('climate-line');
+    if (!span || state.year !== y) return;
+    const d = climateDelta(climate, y);
+    if (d == null) return;
+    span.textContent = Math.abs(d) < 0.15
+      ? `In ${y}, Earth's surface was about the same temperature as it is now.`
+      : `Earth's surface was about ${Math.abs(d).toFixed(1)}°C ${d > 0 ? 'cooler' : 'warmer'} in ${y} than it is now.`;
+  };
+  if (climate) setClimate();
+  else loadClimate().then(setClimate);
 }
 
 // marcus FR-1: the dot field's data as a real table behind a disclosure

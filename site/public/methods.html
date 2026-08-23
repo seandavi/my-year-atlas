@@ -114,6 +114,10 @@
   <h2>Small countries are noisy</h2>
   <p>Below roughly 90,000 residents, the UN estimates get noisy and single-year age cells can round oddly. We still show these countries, but flagged, so a strange-looking number for a very small place is read with the right amount of salt.</p>
 
+  <h2>The year you arrived in</h2>
+  <p>The context panel shows three indicators for your birth year: infant mortality (deaths before the first birthday per 1,000 live births that year), the median age of the whole population, and the total fertility rate. All three come from the same UN release as everything else — <code>WPP2024_Demographic_Indicators_Medium.csv.gz</code>, checksummed above, same CC BY 3.0 IGO license — read off directly at your birth year, with no modeling on our side. The UN series starts in 1950, so the panel is simply absent for earlier birth years.</p>
+  <p>The temperature sentence uses NASA's <a href="https://data.giss.nasa.gov/gistemp/">GISS Surface Temperature Analysis, version 4 (GISTEMP v4)</a>, a public-domain series of global annual surface temperature anomalies — each year's difference from the 1951&ndash;1980 average. We compare your birth year's anomaly with the mean of the five most recent complete years. It describes measured history only; it is not a forecast. Citation: GISTEMP Team, <em>GISS Surface Temperature Analysis (GISTEMP), version 4</em>, NASA Goddard Institute for Space Studies.</p>
+
   <h2>What we deliberately do not compute</h2>
   <p>Nothing on this site estimates an individual's life expectancy, remaining years, or anything of the kind — not in fine print, not behind a toggle. The same data could power that, and we chose not to: this is a tool for seeing the company you keep, the cohort moving through time with you, and a countdown would poison that view without telling any one person anything true about their own life. Population statistics describe cohorts, not individuals.</p>
 
@@ -129,6 +133,9 @@
     <tr><td>Passport contrast</td><td><code>data/cohorts-now.parquet</code></td><td>same <code>birth_year</code>, several <code>iso3</code>; country births labeled net of migration</td></tr>
     <tr><td>Cohort trajectory</td><td><code>data/traj/iso3=&hellip;/*.parquet</code></td><td><code>alive</code> by <code>ref_year</code> for one <code>birth_year</code></td></tr>
     <tr><td>Bigger cohorts</td><td><code>data/world-now.json</code></td><td>birth years with <code>alive</code> &gt; yours, sorted</td></tr>
+    <tr><td>Birth-year context (infant mortality, median age, fertility)</td><td><code>data/world-now.json</code> / <code>data/now/&hellip;.json</code></td><td><code>imr, median_age, tfr</code> where <code>birth_year = Y</code>; null before 1950</td></tr>
+    <tr><td>Median birth year</td><td><code>data/world-now.json</code></td><td>smallest <code>Y</code> with <code>cum_alive_younger &lt; total_alive / 2</code></td></tr>
+    <tr><td>Temperature comparison</td><td><code>data/climate.json</code></td><td>mean <code>anomaly</code> of the latest 5 years &minus; <code>anomaly</code> where <code>year = Y</code></td></tr>
   </table></div>
 
   <h2>Reproducing the build</h2>
