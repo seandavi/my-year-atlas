@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # weekly: catch upstream data drift
+  workflow_dispatch:
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+        working-directory: site
+      - run: npm test
+        working-directory: site
+      - run: npm run build
+        working-directory: site
+
+  data-assertions:
+    # Full pipeline incl. the world alive<=births assertion (spec §12).
+    # Only when the pipeline changes or on the weekly run — it downloads ~145MB.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(join(github.event.commits.*.modified, ' '), 'scripts/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: wpp2024-raw-v1
+      - name: Install DuckDB CLI
+        run: |
+          curl -sL https://github.com/duckdb/duckdb/releases/download/v1.3.2/duckdb_cli-linux-amd64.zip -o /tmp/duckdb.zip
+          unzip -o /tmp/duckdb.zip -d /usr/local/bin
+      - run: ./scripts/build.sh
