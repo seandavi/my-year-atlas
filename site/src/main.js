@@ -3,6 +3,7 @@ import {
   findYear, cohortSizeNow, originalCohortSize, shareStillLiving,
   ageRankPercentile, cohortTrajectory, passportContrast, pickContrastCountries,
   biggerCohorts, fmtPeople, fmtPctWhole, medianBirthYear, climateDelta,
+  migrationEpisode,
 } from './stats.js';
 import { renderDotField, trajectorySVG } from './dots.js';
 import { shortName, inSentence } from './names.js';
@@ -372,12 +373,28 @@ async function renderTrajectory() {
   const heading = state.iso3 ? `Residents born in ${y} over time` : 'Your cohort so far';
   const caption = state.iso3
     ? `People born in ${y} living in ${placeIn()}, counted in each year since ${x0} —
-       migration included, so this is people living there now, not survivors.`
+       migration included, so this is people living there now, not survivors. The bars
+       underneath are the country's net migration across all ages, not just your cohort.`
     : `People born in ${y}, counted in each year since ${x0} — solid is UN estimates,
        dashed is the 2024–2026 projection.`;
+  // country view: aligned net-migration strip + data-driven callout, so step
+  // changes in the line (Albania in the 1990s) explain themselves
+  let migration = null, callout = '';
+  const rows = currentRows();
+  if (state.iso3 && rows) {
+    migration = rows.filter((r) => r.net_mig != null)
+      .map((r) => ({ year: r.birth_year, net: Number(r.net_mig) }));
+    const ep = migrationEpisode(rows, rows[0].total_alive);
+    if (ep) {
+      const dir = ep.avg < 0 ? `left ${placeIn()} than arrived` : `arrived in ${placeIn()} than left`;
+      callout = `<p class="note">Between ${ep.start} and ${ep.end}, about
+        ${fmtPeople(Math.abs(ep.avg))} more people ${dir} each year, on average.</p>`;
+    }
+  }
   trajEl.innerHTML = `<h2>${heading}</h2>
     <p class="caption">${caption}</p>
-    ${trajectorySVG(arc, y)}
+    ${trajectorySVG(arc, y, migration)}
+    ${callout}
     <details class="viz-table"><summary>View as table</summary>
       <table>
         <thead><tr><th scope="col">Year</th><th scope="col" class="n">Born ${y}, alive</th></tr></thead>

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import {
   cohortSizeNow, originalCohortSize, shareStillLiving, ageRankPercentile,
   cohortTrajectory, passportContrast, pickContrastCountries, biggerCohorts,
-  fmtPeople, fmtPctWhole, medianBirthYear, climateDelta, findYear,
+  fmtPeople, fmtPctWhole, medianBirthYear, climateDelta, migrationEpisode, findYear,
 } from '../src/stats.js';
 
 const p = (rel) => fileURLToPath(new URL(rel, import.meta.url));
@@ -153,4 +153,18 @@ test('fmtPctWhole never shows 100% for the 1926 open-ended bucket', () => {
   const pct = ageRankPercentile(world, 1926);
   assert.ok(pct < 1);
   assert.equal(fmtPctWhole(pct), '99%');
+});
+
+test('migrationEpisode: Albania 1990s outflow, UAE inflow, tiny flows gated', () => {
+  const alb = json('../public/data/now/ALB.json');
+  const e = migrationEpisode(alb, alb[0].total_alive);
+  assert.ok(e && e.avg < -40000, `Albania episode avg ${e?.avg}`);
+  assert.ok(e.start >= 1985 && e.end <= 2010, `window ${e.start}-${e.end}`);
+
+  const are = json('../public/data/now/ARE.json');
+  const e2 = migrationEpisode(are, are[0].total_alive);
+  assert.ok(e2 && e2.avg > 0, 'UAE should be a net-arrival episode');
+
+  const flat = Array.from({ length: 60 }, (_, i) => ({ birth_year: 1950 + i, net_mig: 100, total_alive: 5e6 }));
+  assert.equal(migrationEpisode(flat, 5e6), null, 'trivial flow must gate out');
 });

@@ -59,7 +59,8 @@ SELECT
   Time::SMALLINT                                      AS year,
   round(IMR, 1)                                       AS imr,
   round(MedianAgePop, 1)                              AS median_age,
-  round(TFR, 2)                                       AS tfr
+  round(TFR, 2)                                       AS tfr,
+  CAST(round(NetMigrations * 1000) AS BIGINT)         AS net_mig
 FROM ind_raw
 WHERE keep_loc(LocTypeName, ISO3_code, LocID);
 
@@ -134,7 +135,7 @@ COPY (
 COPY (
   SELECT c.birth_year, c.alive, c.alive_male, c.alive_female, c.open_ended,
          r.cum_alive_younger, r.total_alive, b.births,
-         x.imr, x.median_age, x.tfr
+         x.imr, x.median_age, x.tfr, x.net_mig
   FROM cohorts c
   JOIN rank_index r USING (iso3, ref_year, birth_year)
   LEFT JOIN births b ON b.iso3 = c.iso3 AND b.year = c.birth_year
@@ -158,7 +159,7 @@ COPY (
 COPY (
   SELECT 'COPY (SELECT c.iso3, c.location_name, c.birth_year, c.alive, '
       || 'c.alive_male, c.alive_female, c.open_ended, r.cum_alive_younger, '
-      || 'r.total_alive, b.births, x.imr, x.median_age, x.tfr '
+      || 'r.total_alive, b.births, x.imr, x.median_age, x.tfr, x.net_mig '
       || 'FROM ''data/derived/cohorts.parquet'' c '
       || 'JOIN ''data/derived/rank_index.parquet'' r USING (iso3, ref_year, birth_year) '
       || 'LEFT JOIN ''data/derived/births.parquet'' b ON b.iso3 = c.iso3 AND b.year = c.birth_year '

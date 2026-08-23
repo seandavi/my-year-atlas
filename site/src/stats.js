@@ -148,3 +148,27 @@ export function fmtPctWhole(x) {
   if (v <= 0) return '1%';
   return `${v}%`;
 }
+
+/**
+ * Largest sustained migration flow: the 10-year window with the biggest
+ * mean |net migration| (all ages, not cohort-specific). Returns null when
+ * the flow is too small to say anything about — under 0.15% of the current
+ * population per year, or under 2,500 people.
+ */
+export function migrationEpisode(rows, totalAlive) {
+  const series = rows
+    .filter((r) => r.net_mig != null)
+    .map((r) => ({ year: r.birth_year, net: Number(r.net_mig) }))
+    .sort((a, b) => a.year - b.year);
+  if (series.length < 10) return null;
+  let best = null;
+  for (let i = 0; i + 10 <= series.length; i++) {
+    const win = series.slice(i, i + 10);
+    const avg = win.reduce((s, d) => s + d.net, 0) / win.length;
+    if (!best || Math.abs(avg) > Math.abs(best.avg)) {
+      best = { start: win[0].year, end: win.at(-1).year, avg };
+    }
+  }
+  const floor = Math.max(2500, 0.0015 * Number(totalAlive));
+  return Math.abs(best.avg) >= floor ? best : null;
+}

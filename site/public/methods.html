@@ -80,7 +80,7 @@
 <main>
   <nav><a href="/">&larr; Year Atlas</a></nav>
   <h1>How the numbers are made</h1>
-  <p class="updated">Reference year 2026 &middot; built from UN World Population Prospects 2024 &middot; build commit <code>d91b60a</code></p>
+  <p class="updated">Reference year 2026 &middot; built from UN World Population Prospects 2024 &middot; build commit <code>15d27c5</code></p>
 
   <p>Every figure on this site comes from one public dataset through a short, open pipeline. This page explains the choices we made, the ones we deliberately didn't, and exactly where each number comes from. If you find a discrepancy, <a href="https://github.com/seandavi/my-year-atlas/issues">open an issue</a> — challenges to the numbers are welcome.</p>
 
@@ -121,6 +121,9 @@
   <h2>The map of where your year lives</h2>
   <p>The world map shades each country by how many of your birth year's people live there today. Country outlines come from <a href="https://www.naturalearthdata.com/">Natural Earth</a> (1:110m cultural vectors, public domain, via the <code>world-atlas</code> package), drawn in the <a href="https://en.wikipedia.org/wiki/Equal_Earth_projection">Equal Earth projection</a> — chosen because it is equal-area, so a country's visual weight on the map is proportional to its land, not distorted toward the poles. The projection is applied once at build time; the browser only fills prepared shapes. The values are the same 2026 cohort slice as everything else (<code>data/cohorts-now.parquet</code>), shaded in powers-of-ten bins because cohort sizes span from a handful of people to tens of millions. A few small territories in the UN data have no shape at the 1:110m scale — they appear in the map's table view but not on the map itself.</p>
 
+  <h2>The migration strip under the country chart</h2>
+  <p>A country's cohort line can step up or down for reasons that have nothing to do with mortality — Albania's cohorts shrink sharply through the 1990s because roughly 65,000 more people left than arrived each year after 1991. To make such steps explain themselves, the country trajectory carries an aligned strip of the UN's <em>net migration</em> series (the same <code>WPP2024_Demographic_Indicators</code> file, column <code>NetMigrations</code>): gold bars are years when more people arrived than left, grey the reverse. Two honesty notes: the series covers <strong>all ages</strong>, not the single cohort drawn above it; and the UN estimates it as a residual, smoothed over intercensal periods, so sharp single-year spikes may appear spread over several years. The sentence under the chart reports the ten-year window with the largest average flow, and only appears when that flow is demographically meaningful (at least 0.15% of the population per year).</p>
+
   <h2>The people in your company</h2>
   <p>The "In your company" names come from <a href="https://www.wikidata.org/">Wikidata</a> (CC0, no rights reserved), harvested once per build by <code>scripts/fetch_people.mjs</code>: for each birth year we take the people with the most Wikipedia language editions. That is a measure of cross-language <em>fame</em>, not importance — it skews toward entertainers, athletes and politicians, and toward the English-speaking world. We say so on the page.</p>
   <p>One editorial choice: people primarily notable for mass violence or terror are excluded from the default list. The exclusion list is short, public (in <code>scripts/fetch_people.mjs</code>), and applied at build time. The underlying data is Wikidata's; anyone can re-derive the unfiltered list.</p>
@@ -147,7 +150,7 @@
   </table></div>
 
   <h2>Reproducing the build</h2>
-  <p>The whole pipeline is in the open at <a href="https://github.com/seandavi/my-year-atlas">github.com/seandavi/my-year-atlas</a>. Running <code>./scripts/build.sh</code> downloads the raw files (verifying the checksums above), runs <code>scripts/build.sql</code> in DuckDB, and fails loudly if any sanity assertion trips — including the world-level check that survivors of a birth year never exceed births in that year. The figures on this site were produced at commit <code>d91b60a</code>.</p>
+  <p>The whole pipeline is in the open at <a href="https://github.com/seandavi/my-year-atlas">github.com/seandavi/my-year-atlas</a>. Running <code>./scripts/build.sh</code> downloads the raw files (verifying the checksums above), runs <code>scripts/build.sql</code> in DuckDB, and fails loudly if any sanity assertion trips — including the world-level check that survivors of a birth year never exceed births in that year. The figures on this site were produced at commit <code>15d27c5</code>.</p>
 
   <p class="updated">Questions or corrections: <a href="https://github.com/seandavi/my-year-atlas/issues">open a data question</a>.</p>
 </main>

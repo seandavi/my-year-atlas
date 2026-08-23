@@ -89,13 +89,35 @@ export function renderDotField(canvas, captionEl, rows, userYear, placeName) {
  * no projected decline, no future year labels (§9). Estimates to 2023 solid,
  * the 2024–2026 projection dashed.
  */
-export function trajectorySVG(traj, userYear) {
-  const W = 640, H = 220, PAD = { l: 8, r: 8, t: 16, b: 24 };
+export function trajectorySVG(traj, userYear, migration = null) {
+  const strip = migration && migration.length > 5;
+  const STRIP_H = 56, STRIP_GAP = 14;
+  const W = 640, H = 220 + (strip ? STRIP_H + STRIP_GAP + 6 : 0), PAD = { l: 8, r: 8, t: 16, b: 24 };
   const years = traj.map((d) => d.ref_year);
   const x0 = Math.min(...years), x1 = Math.max(...years);
   const yMax = Math.max(...traj.map((d) => d.alive));
   const X = (yr) => PAD.l + ((yr - x0) / (x1 - x0)) * (W - PAD.l - PAD.r);
-  const Y = (v) => PAD.t + (1 - v / yMax) * (H - PAD.t - PAD.b);
+  const lineH = 220;
+  const Y = (v) => PAD.t + (1 - v / yMax) * (lineH - PAD.t - PAD.b);
+
+  // Aligned net-migration strip (all ages): bars around a zero line,
+  // symmetric scale so inflow and outflow read at the same visual weight.
+  let stripSVG = '';
+  if (strip) {
+    const mig = migration.filter((m) => m.year >= x0 && m.year <= x1);
+    const mMax = Math.max(...mig.map((m) => Math.abs(m.net)), 1);
+    const top = lineH + STRIP_GAP - PAD.b + 24;
+    const yZero = top + STRIP_H / 2;
+    const bw = Math.max(1.5, (W - PAD.l - PAD.r) / (x1 - x0 + 1) - 1);
+    stripSVG = `<line x1="${PAD.l}" y1="${yZero}" x2="${W - PAD.r}" y2="${yZero}" stroke="var(--line)"/>`
+      + mig.map((m) => {
+        const h = (Math.abs(m.net) / mMax) * (STRIP_H / 2);
+        const y = m.net >= 0 ? yZero - h : yZero;
+        const cls = m.net >= 0 ? 'var(--gold)' : 'var(--ink-soft)';
+        return `<rect x="${(X(m.year) - bw / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(h, 0.5).toFixed(1)}" fill="${cls}" opacity="0.85"/>`;
+      }).join('')
+      + `<text x="${PAD.l}" y="${top - 4}" font-size="10" fill="var(--ink-soft)">net migration, all ages — gold: more arrived · grey: more left</text>`;
+  }
   const pts = (seg) => seg.map((d) => `${X(d.ref_year).toFixed(1)},${Y(d.alive).toFixed(1)}`).join(' ');
 
   const est = traj.filter((d) => d.ref_year <= 2023);
@@ -105,7 +127,7 @@ export function trajectorySVG(traj, userYear) {
   const peak = traj.reduce((a, b) => (b.alive > a.alive ? b : a));
 
   const tick = (yr, anchor = 'middle') =>
-    `<text x="${X(yr)}" y="${H - 6}" text-anchor="${anchor}" font-size="11" fill="var(--ink-soft)">${yr}</text>`;
+    `<text x="${X(yr)}" y="${lineH - 6}" text-anchor="${anchor}" font-size="11" fill="var(--ink-soft)">${yr}</text>`;
   const ticks = tick(x0, 'start') + tick(x1, 'end');
 
   const label = `People born in ${userYear}, counted in each year from ${x0} to ${x1}: `
@@ -120,5 +142,6 @@ export function trajectorySVG(traj, userYear) {
     ${now ? `<circle cx="${X(x1)}" cy="${Y(now.alive)}" r="4" fill="var(--gold)"/>
     <text x="${Math.min(X(x1), W - 130)}" y="${Math.max(Y(now.alive) - 16, 12)}" font-size="11" font-weight="600" fill="var(--gold)">${x1} · ${fmtPeople(now.alive)}</text>` : ''}
     ${ticks}
+    ${stripSVG}
   </svg>`;
 }
