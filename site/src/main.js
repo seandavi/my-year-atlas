@@ -195,6 +195,7 @@ function renderAnswer() {
   renderBigger(rows, y);
   if (detailsWanted) renderDetails();
   if (trajWanted) renderTrajectory();
+  if (mapWanted) renderMapSection();
 }
 
 // issue #9/#15: birth-year context panel. Quiet, factual, below the answer.
@@ -339,6 +340,21 @@ async function renderTrajectory() {
     </details>`;
 }
 
+// choropleth (issue #37): geometry + parquet fetched once when the section
+// first scrolls into view; year/country changes recolor from the cached parse
+let mapWanted = false;
+let mapSeq = 0;
+async function renderMapSection() {
+  mapWanted = true;
+  if (!state.year || !world) return;
+  const seq = ++mapSeq;
+  const mod = await import('./map.js');
+  const { geo, rows } = await mod.loadMapData();
+  if (seq !== mapSeq || !state.year) return;
+  mod.renderMap($('worldmap'), geo, rows, state.year,
+    yearLabel(findYear(world, state.year), state.year), state.iso3);
+}
+
 async function render() {
   renderAnswer();
   if (state.iso3 && !countryRows[state.iso3]) {
@@ -479,6 +495,13 @@ new IntersectionObserver((entries, obs) => {
     renderTrajectory();
   }
 }).observe($('trajectory'));
+
+new IntersectionObserver((entries, obs) => {
+  if (entries.some((e) => e.isIntersecting)) {
+    obs.disconnect();
+    renderMapSection();
+  }
+}, { rootMargin: '200px' }).observe($('worldmap'));
 
 $('share').addEventListener('click', async () => {
   const rows = currentRows();
