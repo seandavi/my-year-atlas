@@ -172,3 +172,25 @@ export function migrationEpisode(rows, totalAlive) {
   const floor = Math.max(2500, 0.0015 * Number(totalAlive));
   return Math.abs(best.avg) >= floor ? best : null;
 }
+
+/** 1-in-N: how many residents share the user's birth year. */
+export function oneInN(rows, birthYear) {
+  const row = findYear(rows, birthYear);
+  if (!row || !Number(row.alive)) return null;
+  return Math.round(Number(row.total_alive) / Number(row.alive));
+}
+
+/** Share of the world's birthYear cohort living in this place (0..1). */
+export function shareOfWorldCohort(rows, worldRows, birthYear) {
+  const a = cohortSizeNow(rows, birthYear);
+  const w = cohortSizeNow(worldRows, birthYear);
+  return a != null && w ? Number(a) / Number(w) : null;
+}
+
+/** Size rank of the user's cohort among the place's (1 = largest), and count. */
+export function cohortRank(rows, birthYear) {
+  const mine = cohortSizeNow(rows, birthYear);
+  if (mine == null) return null;
+  const rank = 1 + rows.filter((r) => Number(r.alive) > Number(mine)).length;
+  return { rank, of: rows.length };
+}

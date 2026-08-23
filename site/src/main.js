@@ -3,6 +3,7 @@ import {
   findYear, cohortSizeNow, originalCohortSize, shareStillLiving,
   ageRankPercentile, cohortTrajectory, passportContrast, pickContrastCountries,
   biggerCohorts, medianBirthYear, climateDelta, migrationEpisode,
+  oneInN, shareOfWorldCohort, cohortRank,
 } from './stats.js';
 import { renderDotField, trajectorySVG } from './dots.js';
 import { shortName } from './names.js';
@@ -271,6 +272,22 @@ function renderAnswer() {
     parts.push(withInfo(t.migrationCaveat(placeIn(), y), 'migration'));
     if (Number(row.total_alive) < SMALL_POP) {
       parts.push(`<p class="note">${t.smallPop} ${infoLink('small-countries')}</p>`);
+    }
+    // country stat figures: quiet type-set row, no card chrome (dashboard-card
+    // look is a §7 no-go). Values sans-semibold proportional; labels soft.
+    const n = oneInN(rows, y);
+    const ws = world ? shareOfWorldCohort(rows, world, y) : null;
+    const rk = row.open_ended ? null : cohortRank(rows, y);
+    const cm = medianBirthYear(rows);
+    const figs = [
+      n != null && { v: t.figOneInN(n), l: t.figOneInNLabel },
+      ws != null && { v: t.figWorldShare(ws), l: t.figWorldShareLabel(yl) },
+      rk && { v: t.figRank(rk.rank), l: t.figRankLabel(rk.of) },
+      cm != null && { v: String(cm), l: t.figMedianLabel(unName(), curIso2()) },
+    ].filter(Boolean);
+    if (figs.length >= 3) {
+      parts.push(`<div class="figrow" role="list">${figs.map((f) =>
+        `<div class="fig" role="listitem"><span class="fig-v">${f.v}</span><span class="fig-l">${f.l}</span></div>`).join('')}</div>`);
     }
   } else {
     parts.push(t.headlineWorld(alive, yl, t.fmtPct(pct)));

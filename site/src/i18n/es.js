@@ -219,4 +219,17 @@ export default {
 
   errYearOutside: (min, max) => `Ese año está fuera de ${min}–${max}.`,
   errNoCountry: (typed, sug) => `No hay ningún país llamado «${typed}».${sug ? ` ¿Quisiste decir ${sug}?` : ''}`,
+
+  // country stat figures
+  figOneInN: (n) => `1 de cada ${n.toLocaleString('es')}`,
+  figOneInNLabel: 'personas allí comparte tu año',
+  figWorldShare: (x) => {
+    const v = x * 100;
+    const s = v >= 10 ? Math.round(v).toLocaleString('es') : v >= 1 ? v.toFixed(1).replace('.', ',') : v.toFixed(2).replace('.', ',');
+    return `${s}\u00a0%`;
+  },
+  figWorldShareLabel: (yl) => `de los nacidos en ${yl} del mundo viven allí`,
+  figRank: (r) => `${r}.º`,
+  figRankLabel: (of) => `año de nacimiento más numeroso de ${of}`,
+  figMedianLabel: (unName, iso2) => `la mitad ${ofSentence(displayName(unName, iso2), iso2)} nació después de`,
 };

@@ -213,4 +213,19 @@ export default {
   // errors
   errYearOutside: (min, max) => `That year is outside ${min}–${max}.`,
   errNoCountry: (typed, sug) => `No country called “${typed}”.${sug ? ` Did you mean ${sug}?` : ''}`,
+
+  // country stat figures
+  figOneInN: (n) => `1 in ${n.toLocaleString('en-US')}`,
+  figOneInNLabel: 'people there shares your year',
+  figWorldShare: (x) => {
+    const v = x * 100;
+    return v >= 10 ? `${Math.round(v)}%` : v >= 1 ? `${v.toFixed(1)}%` : `${v.toFixed(2)}%`;
+  },
+  figWorldShareLabel: (yl) => `of the world's ${yl}-born live there`,
+  figRank: (r) => {
+    const s = new Intl.PluralRules('en', { type: 'ordinal' }).select(r);
+    return `${r}${{ one: 'st', two: 'nd', few: 'rd', other: 'th' }[s]}`;
+  },
+  figRankLabel: (of) => `largest birth year of the ${of}`,
+  figMedianLabel: (unName, _iso2) => `half of ${shortName(unName)} was born after`,
 };

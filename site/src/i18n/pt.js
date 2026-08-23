@@ -220,4 +220,17 @@ export default {
 
   errYearOutside: (min, max) => `Esse ano está fora de ${min}–${max}.`,
   errNoCountry: (typed, sug) => `Não há nenhum país chamado “${typed}”.${sug ? ` Você quis dizer ${sug}?` : ''}`,
+
+  // country stat figures
+  figOneInN: (n) => `1 em cada ${n.toLocaleString('pt')}`,
+  figOneInNLabel: 'pessoas de lá compartilha seu ano',
+  figWorldShare: (x) => {
+    const v = x * 100;
+    const s = v >= 10 ? Math.round(v).toLocaleString('pt') : v >= 1 ? v.toFixed(1).replace('.', ',') : v.toFixed(2).replace('.', ',');
+    return `${s}%`;
+  },
+  figWorldShareLabel: (yl) => `dos nascidos em ${yl} no mundo vivem lá`,
+  figRank: (r) => `${r}.º`,
+  figRankLabel: (of) => `maior ano de nascimento de ${of}`,
+  figMedianLabel: (unName, iso2) => `metade ${ofSentence(displayName(unName, iso2), iso2)} nasceu depois de`,
 };

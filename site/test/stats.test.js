@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import {
   cohortSizeNow, originalCohortSize, shareStillLiving, ageRankPercentile,
   cohortTrajectory, passportContrast, pickContrastCountries, biggerCohorts,
-  fmtPeople, fmtPctWhole, medianBirthYear, climateDelta, migrationEpisode, findYear,
+  fmtPeople, fmtPctWhole, medianBirthYear, climateDelta, migrationEpisode, findYear, oneInN, shareOfWorldCohort, cohortRank,
 } from '../src/stats.js';
 
 const p = (rel) => fileURLToPath(new URL(rel, import.meta.url));
@@ -167,4 +167,15 @@ test('migrationEpisode: Albania 1990s outflow, UAE inflow, tiny flows gated', ()
 
   const flat = Array.from({ length: 60 }, (_, i) => ({ birth_year: 1950 + i, net_mig: 100, total_alive: 5e6 }));
   assert.equal(migrationEpisode(flat, 5e6), null, 'trivial flow must gate out');
+});
+
+test('country stat figures: oneInN, world share, rank (USA 1971)', () => {
+  const usa = json('../public/data/now/USA.json');
+  const n = oneInN(usa, 1971);
+  assert.equal(n, Math.round(349035487 / 4297760)); // 81
+  const ws = shareOfWorldCohort(usa, world, 1971);
+  assert.ok(Math.abs(ws - 4297760 / 91070227) < 1e-9);
+  const rk = cohortRank(usa, 1971);
+  assert.ok(rk.rank >= 1 && rk.rank <= rk.of && rk.of === 101);
+  assert.equal(cohortRank(usa, 1800), null);
 });

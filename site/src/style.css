@@ -240,3 +240,15 @@ footer p { margin-top: 8px; }
   #dotfield-section:not([hidden]) #dotfield { animation: fade 0.5s ease-out; }
   @keyframes fade { from { opacity: 0; } }
 }
+
+/* country stat figures — type-set row, deliberately no card chrome */
+.figrow {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 24px 28px; margin: 24px 0 8px; max-width: 640px;
+}
+.fig { display: flex; flex-direction: column; gap: 2px; }
+.fig-v {
+  font-weight: 600; font-size: 1.5rem; line-height: 1.15; color: var(--ink);
+  font-variant-numeric: normal;
+}
+.fig-l { font-size: 0.8rem; line-height: 1.35; color: var(--ink-soft); }
