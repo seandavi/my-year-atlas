@@ -226,6 +226,26 @@ school" — capped at cohorts observable by 2010, i.e. birth years up to ~1985),
 and send the IIASA license email in parallel; WIC would extend the same feature
 to 200 countries and recent cohorts.
 
+## Addendum 2: HMD / HFD verified (spec §3.2's deferred v2 source)
+
+- **Human Mortality Database — CC BY 4.0 on HMD-constructed data** (life
+  tables, death rates, exposures), verified verbatim from the current User
+  Agreement. Registration gates downloads but not reuse; only the InputDB
+  (national raw feeds) is non-redistributable. 41 countries. Full cohort life
+  tables stop at ~1932 birth cohorts, but **cohort death rates (cMx 1x1) run to
+  ~1994 cohorts for all countries** — enough to build true observed cohort
+  survivorship curves (the thing WPP's direct mapping approximates). Bulk zips
+  with DOIs (current: 10.4054/HMD.Countries.20260615) — cite the version.
+- **Human Fertility Database — CC BY 4.0** likewise (constructed data only).
+  34 countries, single-year age × single-year mother-birth-cohort fertility to
+  ~2011 cohorts. Enables "children born to your cohort" style stats.
+- **Human Fertility Collection — avoid**: no license on site, republication
+  requires written permission.
+
+**Verdict:** the v2 "true cohort survivorship" feature from spec §3.2 is
+license-clean and buildable for ~41 (mostly rich) countries — a textbook case
+for the partial-coverage policy above.
+
 ## Ranking
 
 Ranked on license cleanliness × granularity, per the policy above, using only
