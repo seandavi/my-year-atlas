@@ -132,6 +132,10 @@ a:focus-visible {
 .headline strong { color: var(--gold); font-weight: 650; }
 .note { font-size: 0.85rem; margin-top: 8px; }
 
+/* --- birth-year context panel (issue #9) --- */
+#context { margin-top: 40px; }
+#context p { font-size: 0.95rem; color: var(--ink-soft); max-width: 38rem; }
+
 /* --- dot field --- */
 #dotfield-section { margin-top: 40px; }
 #dotfield { width: 100%; display: block; }

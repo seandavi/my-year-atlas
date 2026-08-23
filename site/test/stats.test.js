@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import {
   cohortSizeNow, originalCohortSize, shareStillLiving, ageRankPercentile,
   cohortTrajectory, passportContrast, pickContrastCountries, biggerCohorts,
-  fmtPeople, fmtPctWhole,
+  fmtPeople, fmtPctWhole, medianBirthYear, climateDelta, findYear,
 } from '../src/stats.js';
 
 const p = (rel) => fileURLToPath(new URL(rel, import.meta.url));
@@ -69,7 +69,11 @@ test('per-country JSON slice has the same row schema as world-now.json', () => {
 });
 
 test('cohort trajectory: WLD 1971 includes 2026 point at 91,070,227, sorted', async () => {
-  const rows = await readParquet(p('../public/data/traj/iso3=WLD/data_0.parquet'));
+  // the traj slice is sharded; the app reads every shard, so must the test
+  const { readdirSync } = await import('node:fs');
+  const dir = p('../public/data/traj/iso3=WLD/');
+  const shards = readdirSync(dir).filter((f) => f.endsWith('.parquet'));
+  const rows = (await Promise.all(shards.map((f) => readParquet(dir + f)))).flat();
   const traj = cohortTrajectory(rows, 1971);
   assert.ok(traj.length > 50);
   const now = traj.find((d) => d.ref_year === 2026);
@@ -99,6 +103,30 @@ test('bigger cohorts: all strictly larger, sorted descending', () => {
     assert.ok(b.ratio > 1);
   }
   for (let i = 1; i < bigger.length; i++) assert.ok(bigger[i].alive <= bigger[i - 1].alive);
+});
+
+// issue #13: hand-derived from world-now.json — 1994 is the first birth year
+// whose younger side (cum_alive_younger) drops below half of total_alive.
+test('median birth year of the 2026 world slice is 1994', () => {
+  assert.equal(medianBirthYear(world), 1994);
+  const total = Number(world[0].total_alive);
+  const cum = (y) => Number(findYear(world, y).cum_alive_younger);
+  assert.ok(cum(1994) < total / 2);
+  assert.ok(cum(1993) >= total / 2);
+});
+
+// issue #15: delta = mean(latest 5 anomalies) − anomaly[birth year]
+test('climate delta against a fixture array', () => {
+  const fx = [
+    { year: 1979, anomaly: 0.1 },
+    { year: 2021, anomaly: 1.0 }, { year: 2022, anomaly: 1.0 },
+    { year: 2023, anomaly: 1.0 }, { year: 2024, anomaly: 1.0 },
+    { year: 2025, anomaly: 1.5 },
+  ];
+  assert.equal(climateDelta(fx, 1979).toFixed(1), '1.0'); // mean 1.1 − 0.1
+  assert.equal(climateDelta(fx, 2023).toFixed(1), '0.1'); // inside the window
+  assert.equal(climateDelta(fx, 2026), null); // after the latest data year
+  assert.equal(climateDelta(fx, 1900), null); // year not in the series
 });
 
 // FIXSPEC display-precision fixtures — the worker asserts these same pairs.

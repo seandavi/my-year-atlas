@@ -94,6 +94,33 @@ export function biggerCohorts(rows, birthYear) {
     .sort((a, b) => b.alive - a.alive);
 }
 
+/**
+ * Median birth year: the smallest birth year Y such that the people born
+ * after Y are fewer than half of everyone alive — i.e. the year holding the
+ * age-median person. World rows only (needs cum_alive_younger/total_alive).
+ */
+export function medianBirthYear(rows) {
+  const half = num(rows[0].total_alive) / 2;
+  const hit = [...rows]
+    .sort((a, b) => Number(a.birth_year) - Number(b.birth_year))
+    .find((r) => num(r.cum_alive_younger) < half);
+  return hit ? Number(hit.birth_year) : null;
+}
+
+/**
+ * Climate delta: mean anomaly of the 5 most recent years minus the anomaly
+ * of birthYear (°C, GISTEMP v4 rows [{year, anomaly}]). Null when birthYear
+ * is missing or later than the latest data year.
+ */
+export function climateDelta(rows, birthYear) {
+  const sorted = [...rows].sort((a, b) => a.year - b.year);
+  const last5 = sorted.slice(-5);
+  if (last5.length < 5 || birthYear > last5[4].year) return null;
+  const r = sorted.find((x) => x.year === birthYear);
+  if (!r) return null;
+  return last5.reduce((s, x) => s + x.anomaly, 0) / 5 - r.anomaly;
+}
+
 // --- formatting helpers (used by UI and share card) ---
 
 /**
