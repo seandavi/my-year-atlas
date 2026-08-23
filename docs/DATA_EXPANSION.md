@@ -260,6 +260,31 @@ for the partial-coverage policy above.
 - **IPUMS confirmed blocked** (registration + no redistribution). OECD gated
   behind a bot-wall; optional.
 
+## Addendum 4: names, height, religion, urbanization, culture
+
+- **Baby names by birth year — build as a patchwork (~10 clean countries).**
+  Tier 1 (full lists, open licenses, bulk): USA (SSA, public domain), France
+  (INSEE, Licence Ouverte 2.0, 1900–2025 with a ready-made Parquet), Norway
+  (SSB CC BY 4.0, back to 1880 as % of births), England & Wales + Scotland
+  (OGL v3), Ireland (CC BY 4.0), New Zealand, Belgium, Austria, Canada. Tier 2
+  with caveats: Sweden, Switzerland, Spain (CC BY-**SA**), Australia (state
+  patchwork), Denmark. Blocked: Netherlands (database right asserted), Germany
+  (no official register), Italy (query-tool only), Finland (no year dimension).
+  Record birth-year vs registration-year basis per country in metadata.
+- **Height by birth cohort (NCD-RisC) — perfect data, no license.** One 2.4MB
+  CSV: mean height at 18 by birth year 1896–1996 × 200 countries × sex, with
+  CIs. Site says only "All Rights Reserved"; no reuse grant anywhere. Email
+  ncdrisc@imperial.ac.uk before touching it.
+- **Religion by age — drop.** Pew forbids full reproduction, WRD is paywalled,
+  ARDA terms unverifiable. At most an editorial sentence citing Pew.
+- **Urbanization — WUP 2025, CC BY 3.0 IGO (verified in the methodology report
+  front matter), 233 countries, annual 1950–2050.** Same license and LocID
+  scheme as WPP. No age split — a birth-year context stat ("X% of your country
+  lived in cities the year you were born"). Lowest-friction add-on in this
+  entire document.
+- **Culture — MusicBrainz core + Wikidata are CC0.** Zero license risk;
+  the cost is curation (precompute tiny per-year JSON from huge dumps).
+
 ## Ranking
 
 Ranked on license cleanliness × granularity, per the policy above, using only
