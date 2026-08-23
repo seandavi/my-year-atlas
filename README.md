@@ -6,6 +6,10 @@ Enter your birth year (and optionally a country) and see the company you keep: h
 
 Live numbers are the UN World Population Prospects 2024 medium-variant projection for mid-2026. Full caveats live on the [methods page](site/public/methods.html) (served at `/methods.html`).
 
+**Preview:** https://seandavi.github.io/my-year-atlas/ (static; share cards need the worker deploy).
+
+What a year gets you: the headline cohort count and age-rank percentile, the world's median birth year, a population anchor ("that's about the population of Iran"), the year you arrived in (infant mortality, median age, fertility, how much cooler the planet was), notable people born with you (Wikidata, gender-balanced, linked), popular baby names (9 countries, each under its national open license), the signature dot field, your cohort's arc with a net-migration strip for countries, an Equal Earth map of where your year lives now, and world events of your year. Interface in English, Spanish, and Portuguese (`?lang=es|pt`).
+
 ## Quickstart
 
 **Data pipeline** (offline, run once per WPP revision; needs `python3` and `duckdb`):
@@ -49,6 +53,11 @@ cd worker && npx wrangler dev
 | Code in this repository | [MIT](LICENSE) |
 | Source data (UN WPP 2024) | [CC BY 3.0 IGO](https://creativecommons.org/licenses/by/3.0/igo/), citation required |
 | Derived parquet/JSON artifacts | CC BY 3.0 IGO (they inherit the source data's terms) |
+| Temperature series | NASA GISTEMP v4 — US government work, public domain |
+| Country geometry | Natural Earth 110m (public domain), via world-atlas |
+| Notable people | Wikidata, CC0 |
+| Baby names | per-country national licenses — see [data/NAMES_SOURCES.md](data/NAMES_SOURCES.md) |
+| Events selection/text | candidates via Wikipedia year pages (titles only), ranking via Wikimedia pageviews, display text written for this project (MIT) — see [data/EVENTS_SOURCES.md](data/EVENTS_SOURCES.md) |
 
 Required citation: United Nations, Department of Economic and Social Affairs, Population Division (2024). *World Population Prospects 2024*.
 

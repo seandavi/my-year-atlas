@@ -171,3 +171,27 @@ License handling was integrated at every layer, not bolted on:
   deliberately did not work around; one-line command documented for the
   maintainer), then a re-check round with the two harshest personas, then the
   expansion backlog in license-cleanliness order.
+
+## Day 2 addendum (2026-08-23)
+
+Same method, second wave. Highlights beyond the artifact list:
+
+- **Expansion round shipped**: context panel, median birth year (1994),
+  climate line, Equal Earth choropleth (all geo math at build time),
+  notable-people section, net-migration strip + data-driven callout under
+  country trajectories (built after the maintainer spotted Albania's step
+  changes — the explanation was already on disk in `NetMigrations`),
+  baby names (9 national sources), i18n (es/pt, Intl-first), info links.
+- **One real regression caught and root-caused**: DuckDB's partitioned
+  writes shard nondeterministically, so a rebuild silently invalidated the
+  trajectory shard manifest (186/238 stale). Fix deleted the mechanism:
+  one deterministic file per country, no manifest.
+- **License-first held**: Portugal names checked and rejected (no dataset);
+  Brazil shipped via IBGE at decade granularity with the coarseness stated
+  in copy; events built as Wikipedia-candidates + pageview-ranking +
+  original text specifically to avoid CC BY-SA inheritance; Wikidata QIDs
+  for the people blocklist verified individually after 6 of 7 first-guess
+  IDs proved wrong.
+- **Contract-first parallelism paid off again**: the events UI shipped
+  before events.json existed (feature-detected), and the i18n agent's
+  locale modules were reused verbatim by three later features.
