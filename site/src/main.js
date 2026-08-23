@@ -39,7 +39,7 @@ let detailsWanted = false;
 
 function loadCountry(iso3) {
   if (!countryLoading.has(iso3)) {
-    countryLoading.set(iso3, fetch(`/data/now/${iso3}.json`).then((r) => {
+    countryLoading.set(iso3, fetch(`${import.meta.env.BASE_URL}data/now/${iso3}.json`).then((r) => {
       if (!r.ok) throw new Error(`${r.status}`);
       return r.json();
     }).then((rows) => { countryRows[iso3] = rows; return rows; }));
@@ -49,7 +49,7 @@ function loadCountry(iso3) {
 
 let contrastPromise;
 function loadContrast() {
-  contrastPromise ??= fetch('/data/contrast.json').then((r) => r.json())
+  contrastPromise ??= fetch(import.meta.env.BASE_URL + 'data/contrast.json').then((r) => r.json())
     .then((rows) => { contrastRows = rows; return rows; });
   return contrastPromise;
 }
@@ -440,11 +440,11 @@ $('share').addEventListener('click', async () => {
 if (navigator.canShare) $('share').textContent = 'Share image';
 
 // first paint: world json only; locations fill the datalist when they arrive
-fetch('/data/world-now.json').then((r) => r.json()).then((rows) => {
+fetch(import.meta.env.BASE_URL + 'data/world-now.json').then((r) => r.json()).then((rows) => {
   world = rows;
   render();
 });
-fetch('/data/locations.json').then((r) => r.json()).then((locs) => {
+fetch(import.meta.env.BASE_URL + 'data/locations.json').then((r) => r.json()).then((locs) => {
   locations = locs;
   $('countries').innerHTML = locs
     .map((l) => `<option value="${l.location_name.replace(/"/g, '&quot;')}"></option>`)
@@ -452,7 +452,7 @@ fetch('/data/locations.json').then((r) => r.json()).then((locs) => {
   syncInputs();
   if (world) renderAnswer(); // pick up names + the population anchor line
 });
-fetch('/data/meta.json').then((r) => r.json()).then((m) => {
+fetch(import.meta.env.BASE_URL + 'data/meta.json').then((r) => r.json()).then((m) => {
   $('vintage').textContent =
     `${m.source}, ${m.variant} variant · mid-${m.ref_year} reference · build ${m.commit}`;
 });

@@ -18,7 +18,7 @@ export function loadTraj(iso3) {
   if (!trajCache.has(iso3)) {
     trajCache.set(iso3, Promise.all(
       Array.from({ length: n }, (_, i) =>
-        fetchParquet(`/data/traj/iso3=${iso3}/data_${i}.parquet`)),
+        fetchParquet(`${import.meta.env.BASE_URL}data/traj/iso3=${iso3}/data_${i}.parquet`)),
     ).then((parts) => parts.flat()));
   }
   return trajCache.get(iso3);
