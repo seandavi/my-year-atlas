@@ -146,10 +146,12 @@ COPY (
 
 -- Location list for the country selector.
 COPY (
-  SELECT iso3, location_name, sum(alive) AS total_alive
-  FROM cohorts
-  WHERE ref_year = getvariable('ref_now') AND iso3 <> 'WLD'
-  GROUP BY 1, 2 ORDER BY location_name
+  SELECT c.iso3, any_value(i.ISO2_code) AS iso2, c.location_name, sum(c.alive) AS total_alive
+  FROM cohorts c
+  LEFT JOIN (SELECT DISTINCT ISO3_code, ISO2_code FROM ind_raw WHERE ISO3_code IS NOT NULL) i
+    ON i.ISO3_code = c.iso3
+  WHERE c.ref_year = getvariable('ref_now') AND c.iso3 <> 'WLD'
+  GROUP BY 1, 3 ORDER BY c.location_name
 ) TO 'site/public/data/locations.json' (FORMAT JSON, ARRAY true);
 
 -- Per-location current slices as JSON: a shared /?y=&c= link fetches one
