@@ -7,7 +7,7 @@ python3 scripts/fetch.py
 mkdir -p data/derived site/public/data
 rm -rf site/public/data/traj site/public/data/now
 duckdb -f scripts/build.sql
-mkdir -p site/public/data/now
+mkdir -p site/public/data/now site/public/data/traj
 duckdb -f data/derived/_per_country.sql
 # World map geometry -> projected SVG paths (fetches world-atlas once).
 [ -f data/raw/countries-110m.json ] || curl -sL 'https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json' -o data/raw/countries-110m.json

@@ -6,8 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test test/*.test.js",
-    "gen-manifest": "node -e \"const fs=require('fs');const o={};for(const d of fs.readdirSync('public/data/traj').sort())o[d.split('=')[1]]=fs.readdirSync('public/data/traj/'+d).filter(f=>f.endsWith('.parquet')).length;fs.writeFileSync('src/traj-manifest.json',JSON.stringify(o))\""
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "hyparquet": "^1.8.0"

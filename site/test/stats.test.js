@@ -69,11 +69,7 @@ test('per-country JSON slice has the same row schema as world-now.json', () => {
 });
 
 test('cohort trajectory: WLD 1971 includes 2026 point at 91,070,227, sorted', async () => {
-  // the traj slice is sharded; the app reads every shard, so must the test
-  const { readdirSync } = await import('node:fs');
-  const dir = p('../public/data/traj/iso3=WLD/');
-  const shards = readdirSync(dir).filter((f) => f.endsWith('.parquet'));
-  const rows = (await Promise.all(shards.map((f) => readParquet(dir + f)))).flat();
+  const rows = await readParquet(p('../public/data/traj/WLD.parquet'));
   const traj = cohortTrajectory(rows, 1971);
   assert.ok(traj.length > 50);
   const now = traj.find((d) => d.ref_year === 2026);

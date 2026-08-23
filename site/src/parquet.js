@@ -2,7 +2,6 @@
 // when the trajectory chart scrolls into view. Never on the critical path —
 // the "now" data is plain JSON (/data/now/{ISO3}.json, /data/contrast.json).
 import { parquetReadObjects } from 'hyparquet';
-import trajManifest from './traj-manifest.json';
 
 async function fetchParquet(url, columns) {
   const res = await fetch(url);
@@ -19,15 +18,12 @@ export function loadCohortsNow() {
 }
 
 const trajCache = new Map();
-/** Trajectory rows for one location, or null if we have no partition for it. */
+/** Trajectory rows for one location, or null if there is no file for it. */
 export function loadTraj(iso3) {
-  const n = trajManifest[iso3];
-  if (!n) return Promise.resolve(null);
   if (!trajCache.has(iso3)) {
-    trajCache.set(iso3, Promise.all(
-      Array.from({ length: n }, (_, i) =>
-        fetchParquet(`${import.meta.env.BASE_URL}data/traj/iso3=${iso3}/data_${i}.parquet`)),
-    ).then((parts) => parts.flat()));
+    trajCache.set(iso3,
+      fetchParquet(`${import.meta.env.BASE_URL}data/traj/${iso3}.parquet`)
+        .catch(() => null));
   }
   return trajCache.get(iso3);
 }

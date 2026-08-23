@@ -166,7 +166,12 @@ COPY (
       || 'WHERE c.ref_year = ' || getvariable('ref_now')
       || ' AND c.iso3 = ''' || iso3 || ''' ORDER BY c.birth_year) '
       || 'TO ''site/public/data/now/' || iso3 || '.json'' (FORMAT JSON, ARRAY true);'
-  FROM (SELECT DISTINCT iso3 FROM cohorts WHERE iso3 <> 'WLD')
+      || chr(10)
+      -- One traj file per location (incl. WLD): deterministic path, no manifest.
+      || 'COPY (SELECT birth_year, ref_year, alive FROM ''data/derived/cohorts.parquet'' '
+      || 'WHERE NOT open_ended AND iso3 = ''' || iso3 || ''' ORDER BY birth_year, ref_year) '
+      || 'TO ''site/public/data/traj/' || iso3 || '.parquet'' (FORMAT PARQUET, COMPRESSION SNAPPY);'
+  FROM (SELECT DISTINCT iso3 FROM cohorts)
 ) TO 'data/derived/_per_country.sql' (FORMAT CSV, HEADER false, QUOTE '');
 
 -- Fixed passport-contrast pool, one small fetch for the country view.
@@ -180,12 +185,7 @@ COPY (
   ORDER BY c.iso3, c.birth_year
 ) TO 'site/public/data/contrast.json' (FORMAT JSON, ARRAY true);
 
--- Per-location cohort trajectories, lazy-fetched by the app.
+-- Per-location cohort trajectories are written one file per location by the
+-- generated _per_country.sql (deterministic paths, no shard manifest).
 -- ponytail: static per-country files instead of DuckDB-WASM; revisit
 -- if we ever need ad-hoc queries in the browser.
-COPY (
-  SELECT iso3, birth_year, ref_year, alive
-  FROM cohorts
-  WHERE NOT open_ended
-  ORDER BY birth_year, ref_year
-) TO 'site/public/data/traj' (FORMAT PARQUET, PARTITION_BY (iso3), COMPRESSION SNAPPY, OVERWRITE_OR_IGNORE);

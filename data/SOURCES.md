@@ -5,6 +5,8 @@ Downloaded 2026-08-23 from `https://population.un.org/wpp/assets/Excel%20Files/1
 
 License: [CC BY 3.0 IGO](https://creativecommons.org/licenses/by/3.0/igo/). Citation: United Nations, Department of Economic and Social Affairs, Population Division (2024). *World Population Prospects 2024*.
 
+**Natural Earth 110m country geometry** — via the `world-atlas@2` package (`countries-110m.json`, jsDelivr). Natural Earth is in the public domain. Projected to Equal Earth at build time by `scripts/build_map.mjs`.
+
 **NASA GISTEMP v4** — global annual surface temperature anomaly vs the 1951–1980 baseline, from `https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.csv`. US government work, public domain. Citation: GISTEMP Team, GISS Surface Temperature Analysis, NASA Goddard Institute for Space Studies.
 
 | file | bytes | sha256 |
