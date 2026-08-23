@@ -80,7 +80,7 @@
 <main>
   <nav><a href="/">&larr; Year Atlas</a></nav>
   <h1>How the numbers are made</h1>
-  <p class="updated">Reference year 2026 &middot; built from UN World Population Prospects 2024 &middot; build commit <code>9609783</code></p>
+  <p class="updated">Reference year 2026 &middot; built from UN World Population Prospects 2024 &middot; build commit <code>43746c2</code></p>
 
   <p>Every figure on this site comes from one public dataset through a short, open pipeline. This page explains the choices we made, the ones we deliberately didn't, and exactly where each number comes from. If you find a discrepancy, <a href="https://github.com/seandavi/my-year-atlas/issues">open an issue</a> — challenges to the numbers are welcome.</p>
 
@@ -132,7 +132,7 @@
   </table></div>
 
   <h2>Reproducing the build</h2>
-  <p>The whole pipeline is in the open at <a href="https://github.com/seandavi/my-year-atlas">github.com/seandavi/my-year-atlas</a>. Running <code>./scripts/build.sh</code> downloads the raw files (verifying the checksums above), runs <code>scripts/build.sql</code> in DuckDB, and fails loudly if any sanity assertion trips — including the world-level check that survivors of a birth year never exceed births in that year. The figures on this site were produced at commit <code>9609783</code>.</p>
+  <p>The whole pipeline is in the open at <a href="https://github.com/seandavi/my-year-atlas">github.com/seandavi/my-year-atlas</a>. Running <code>./scripts/build.sh</code> downloads the raw files (verifying the checksums above), runs <code>scripts/build.sql</code> in DuckDB, and fails loudly if any sanity assertion trips — including the world-level check that survivors of a birth year never exceed births in that year. The figures on this site were produced at commit <code>43746c2</code>.</p>
 
   <p class="updated">Questions or corrections: <a href="https://github.com/seandavi/my-year-atlas/issues">open a data question</a>.</p>
 </main>
