@@ -9,6 +9,8 @@ rm -rf site/public/data/traj site/public/data/now
 duckdb -f scripts/build.sql
 mkdir -p site/public/data/now
 duckdb -f data/derived/_per_country.sql
+# Keep the methods page's cited build commit in sync with this build.
+sed -i -E "s|(build commit <code>)[0-9a-f]+|\1$(git rev-parse --short HEAD)|; s|(produced at commit <code>)[0-9a-f]+|\1$(git rev-parse --short HEAD)|" site/public/methods.html
 # Data-vintage stamp, served with the site and shown in the footer.
 cat > site/public/data/meta.json <<EOF
 {"source":"UN WPP 2024","variant":"medium","ref_year":2026,"built":"$(date -u +%Y-%m-%d)","commit":"$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"}
