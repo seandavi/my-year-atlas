@@ -125,6 +125,34 @@ COPY (
   GROUP BY 1, 2 ORDER BY location_name
 ) TO 'site/public/data/locations.json' (FORMAT JSON, ARRAY true);
 
+-- Per-location current slices as JSON: a shared /?y=&c= link fetches one
+-- ~12KB file instead of the 528KB parquet (that stays for bulk consumers).
+-- FORMAT JSON has no PARTITION_BY, so generate one COPY per location into a
+-- second script that build.sh runs right after this one.
+COPY (
+  SELECT 'COPY (SELECT c.iso3, c.location_name, c.birth_year, c.alive, '
+      || 'c.alive_male, c.alive_female, c.open_ended, r.cum_alive_younger, '
+      || 'r.total_alive, b.births '
+      || 'FROM ''data/derived/cohorts.parquet'' c '
+      || 'JOIN ''data/derived/rank_index.parquet'' r USING (iso3, ref_year, birth_year) '
+      || 'LEFT JOIN ''data/derived/births.parquet'' b ON b.iso3 = c.iso3 AND b.year = c.birth_year '
+      || 'WHERE c.ref_year = ' || getvariable('ref_now')
+      || ' AND c.iso3 = ''' || iso3 || ''' ORDER BY c.birth_year) '
+      || 'TO ''site/public/data/now/' || iso3 || '.json'' (FORMAT JSON, ARRAY true);'
+  FROM (SELECT DISTINCT iso3 FROM cohorts WHERE iso3 <> 'WLD')
+) TO 'data/derived/_per_country.sql' (FORMAT CSV, HEADER false, QUOTE '');
+
+-- Fixed passport-contrast pool, one small fetch for the country view.
+COPY (
+  SELECT c.iso3, c.location_name, c.birth_year, c.alive,
+         r.cum_alive_younger, r.total_alive
+  FROM cohorts c
+  JOIN rank_index r USING (iso3, ref_year, birth_year)
+  WHERE c.ref_year = getvariable('ref_now')
+    AND c.iso3 IN ('JPN', 'NGA', 'BRA', 'USA', 'IND', 'DEU')
+  ORDER BY c.iso3, c.birth_year
+) TO 'site/public/data/contrast.json' (FORMAT JSON, ARRAY true);
+
 -- Per-location cohort trajectories, lazy-fetched by the app.
 -- ponytail: static per-country files instead of DuckDB-WASM; revisit
 -- if we ever need ad-hoc queries in the browser.
