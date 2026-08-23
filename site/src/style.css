@@ -21,6 +21,8 @@
   --line: rgba(19, 31, 54, 0.14);
   --line-strong: rgba(19, 31, 54, 0.36);
   --card: #ffffff;
+  --map-lo: #d3d8e3;      /* map ramp: ink tint → the same gold */
+  --map-hi: #8a5f13;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -34,6 +36,8 @@
     --line: rgba(238, 241, 247, 0.14);
     --line-strong: rgba(238, 241, 247, 0.34);
     --card: #131c30;
+    --map-lo: #2a4070;    /* map ramp: navy → gold */
+    --map-hi: #e8b64c;
   }
 }
 
@@ -165,6 +169,31 @@ th.n { text-align: right; padding-right: 0; }
 tr.you td { color: var(--gold); font-weight: 650; }
 
 #trajectory svg { width: 100%; height: auto; display: block; }
+
+/* --- choropleth (issue #37): quiet, below the dot field in the hierarchy.
+   5 discrete powers-of-ten bins mixed in OKLab from --map-lo to --map-hi so
+   both color schemes fall out of the tokens above. */
+.mapviz { width: 100%; height: auto; display: block; }
+.mapviz path { stroke: var(--bg); stroke-width: 0.5; }
+.mapviz .nodata, .map-legend .nodata { fill: var(--line); background: var(--line); }
+.mapviz .b0, .map-legend .b0 { fill: var(--map-lo); background: var(--map-lo); }
+.mapviz .b1, .map-legend .b1 { fill: color-mix(in oklab, var(--map-lo), var(--map-hi) 25%); background: color-mix(in oklab, var(--map-lo), var(--map-hi) 25%); }
+.mapviz .b2, .map-legend .b2 { fill: color-mix(in oklab, var(--map-lo), var(--map-hi) 50%); background: color-mix(in oklab, var(--map-lo), var(--map-hi) 50%); }
+.mapviz .b3, .map-legend .b3 { fill: color-mix(in oklab, var(--map-lo), var(--map-hi) 75%); background: color-mix(in oklab, var(--map-lo), var(--map-hi) 75%); }
+.mapviz .b4, .map-legend .b4 { fill: var(--map-hi); background: var(--map-hi); }
+/* selected country: cased halo, ~1.5px gold over a bg casing (non-scaling) */
+.mapviz .ring { fill: none; pointer-events: none; }
+.mapviz .ring-under { stroke: var(--bg); stroke-width: 3.5; }
+.mapviz .ring-over { stroke: var(--gold); stroke-width: 1.5; }
+.map-legend {
+  display: flex; flex-wrap: wrap; gap: 4px 12px;
+  font-size: 0.75rem; color: var(--ink-soft); margin-top: 8px;
+}
+.map-legend .key { display: inline-flex; align-items: center; gap: 4px; }
+.map-legend .swatch { width: 12px; height: 12px; border-radius: 2px; flex: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .mapviz path { transition: fill 0.4s; }
+}
 
 .actions { margin-top: 24px; }
 .actions button {
