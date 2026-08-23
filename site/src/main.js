@@ -80,11 +80,12 @@ async function renderPeople(y) {
     <p class="note">Ranked by Wikipedia language editions — one measure of fame among many.</p>`;
 }
 
-// "American singer-songwriter and actress" -> "singer-songwriter" is too
-// lossy; just trim to the first clause and lowercase the lead-in.
+// Trim a Wikidata description to its first clause, dropping office-term
+// tails ("… from 2015 to 2025"). Never split on "and" — it cuts phrases
+// like "Russian and Austrian operatic soprano" down to a nationality.
 function shortDesc(d) {
-  const first = d.split(/[;,] | and /)[0].trim();
-  return first.length > 40 ? `${first.slice(0, 40)}…` : first;
+  const first = d.split(/[;,] /)[0].replace(/\s+(from|since|between)\s+\d{4}.*$/, '').trim();
+  return first.length > 44 ? `${first.slice(0, 44)}…` : first;
 }
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
