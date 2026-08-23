@@ -1,0 +1,5 @@
+data/raw/
+data/derived/
+node_modules/
+dist/
+.wrangler/
