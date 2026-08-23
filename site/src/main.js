@@ -2,17 +2,17 @@ import './style.css';
 import {
   findYear, cohortSizeNow, originalCohortSize, shareStillLiving,
   ageRankPercentile, cohortTrajectory, passportContrast, pickContrastCountries,
-  biggerCohorts, fmtPeople, fmtPctWhole, medianBirthYear, climateDelta,
-  migrationEpisode,
+  biggerCohorts, medianBirthYear, climateDelta, migrationEpisode,
 } from './stats.js';
 import { renderDotField, trajectorySVG } from './dots.js';
-import { shortName, inSentence } from './names.js';
+import { shortName } from './names.js';
+import { t, setLocale, LANGS, registerIso2, iso2Of } from './i18n/index.js';
 
 const $ = (id) => document.getElementById(id);
 const MIN_YEAR = 1926, MAX_YEAR = 2026, REF_YEAR = 2026, SMALL_POP = 90000;
 
 // --- state: the URL is the state ---
-const state = { year: null, iso3: null };
+const state = { year: null, iso3: null, lang: 'en' };
 
 function parseURL() {
   const q = new URLSearchParams(location.search);
@@ -20,14 +20,18 @@ function parseURL() {
   state.year = y >= MIN_YEAR && y <= MAX_YEAR ? y : null;
   const c = (q.get('c') || '').toUpperCase();
   state.iso3 = /^[A-Z]{3}$/.test(c) ? c : null;
+  const lang = q.get('lang');
+  state.lang = LANGS.includes(lang) ? lang : 'en';
 }
 
 function pushURL() {
   const q = new URLSearchParams();
   if (state.year) q.set('y', state.year);
   if (state.iso3) q.set('c', state.iso3);
+  if (state.lang !== 'en') q.set('lang', state.lang);
   const url = q.size ? `?${q}` : location.pathname;
   if (`?${q}` !== location.search) history.pushState(null, '', url);
+  renderSwitcher(); // hrefs carry y/c — keep them current
 }
 
 // --- data: plain JSON on the critical path; parquet only for trajectories ---
@@ -75,10 +79,13 @@ async function renderPeople(y) {
   const list = (people[y] ?? []).slice(0, 6);
   if (!list.length) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
-  el.innerHTML = `<h2>In your company</h2>
-    <p>${y} also brought ${list.map(([name, desc]) =>
-      `<strong>${esc(name)}</strong>${desc ? ` (${esc(shortDesc(desc))})` : ''}`).join(', ')}.</p>
-    <p class="note">Ranked by Wikipedia language editions — one measure of fame among many.</p>`;
+  // Harvested descriptors are English-only: for es/pt show names alone rather
+  // than machine-translating them (a later harvest can add localized ones).
+  const listHtml = list.map(([name, desc]) =>
+    `<strong>${esc(name)}</strong>${t.lang === 'en' && desc ? ` (${esc(shortDesc(desc))})` : ''}`).join(', ');
+  el.innerHTML = `<h2>${t.peopleHeading}</h2>
+    <p>${t.peopleBrought(y, listHtml)}</p>
+    <p class="note">${t.peopleNote}</p>`;
 }
 
 // Trim a Wikidata description to its first clause, dropping office-term
@@ -112,22 +119,24 @@ function unName() {
     ?? state.iso3;
 }
 
+const curIso2 = () => locByIso()?.iso2 ?? iso2Of(state.iso3);
+
 function placeName() { // short display name
-  return state.iso3 ? shortName(unName()) : 'the world';
+  return state.iso3 ? t.displayName(unName(), curIso2()) : t.theWorld;
 }
 
-function placeIn() { // "in the Philippines" / "in Brazil"
-  return state.iso3 ? inSentence(unName()) : 'the world';
+function placeIn() { // "in the Philippines" / "en Filipinas" / "no Brasil"
+  return state.iso3 ? t.placeIn(unName(), curIso2()) : t.inTheWorld;
 }
 
 function yearLabel(row, y) {
-  return row?.open_ended ? `${y} or earlier` : String(y);
+  return row?.open_ended ? t.orEarlier(y) : String(y);
 }
 
 function updateTitle() {
   document.title = state.year
-    ? `Born in ${state.year}${state.iso3 ? ` in ${placeName()}` : ''} — Year Atlas`
-    : 'Year Atlas — everyone born in your year';
+    ? t.docTitle(state.year, state.iso3 ? placeName() : null)
+    : t.docTitleDefault;
 }
 
 // gudrun FR-1: anchor the big number to a country people can picture.
@@ -138,7 +147,7 @@ function populationAnchor(n) {
   const best = pool.reduce((a, b) =>
     (Math.abs(b.total_alive - n) < Math.abs(a.total_alive - n) ? b : a));
   if (Math.abs(best.total_alive - n) / n > 0.15) return null;
-  return shortName(best.location_name);
+  return best;
 }
 
 function renderAnswer() {
@@ -147,14 +156,14 @@ function renderAnswer() {
   renderContext(currentRows(), state.year); // hides itself when there's nothing to say
   renderPeople(state.year); // async; hides itself when there's no list
   if (!state.year) {
-    el.innerHTML = '<p class="invite">Type the year you were born.</p>';
+    el.innerHTML = `<p class="invite">${t.invite}</p>`;
     $('share-actions').hidden = true;
     $('details').hidden = true;
     // ilse P2-1: the empty state IS the product — the world field, no column lit
     if (world) {
       $('dotfield-section').hidden = false;
-      renderDotField($('dotfield'), $('dotfield-caption'), world, null, 'the world');
-      renderDotTable(world, 'the world');
+      renderDotField($('dotfield'), $('dotfield-caption'), world, null, t.theWorld);
+      renderDotTable(world, t.theWorld);
     } else {
       $('dotfield-section').hidden = true;
     }
@@ -162,14 +171,14 @@ function renderAnswer() {
   }
   const rows = currentRows();
   if (!rows) { // country chosen, its slice still on its way
-    el.innerHTML = '<p class="invite">Looking up your country…</p>';
+    el.innerHTML = `<p class="invite">${t.lookingUp}</p>`;
     return;
   }
   const y = state.year;
   const alive = cohortSizeNow(rows, y);
   const row = findYear(rows, y);
   if (alive == null || !row) {
-    el.innerHTML = `<p class="invite">No data for ${y} in ${placeIn()}.</p>`;
+    el.innerHTML = `<p class="invite">${t.noDataYear(y, placeIn())}</p>`;
     return;
   }
   const pct = ageRankPercentile(rows, y);
@@ -179,53 +188,43 @@ function renderAnswer() {
   let medianLine = '';
   if (world) {
     const mY = medianBirthYear(world);
-    const side = y < mY ? "you're in the older half"
-      : y > mY ? "you're in the younger half" : "you're right at the middle";
-    medianLine = `<p class="note">Half of everyone alive today was born after ${mY} — ${side}.</p>`;
+    medianLine = t.medianLine(mY, Math.sign(y - mY));
   }
-  parts.push(`<h2 class="visually-hidden">People born in ${yl}${state.iso3 ? ` in ${placeIn()}` : ''}</h2>`);
+  parts.push(`<h2 class="visually-hidden">${t.hiddenHeading(yl, state.iso3 ? placeIn() : null)}</h2>`);
   // headline + sentence as ONE element so the number never orphans (marcus P1-2)
   if (state.iso3) {
-    parts.push(`<p class="headline"><span class="big">about ${fmtPeople(alive)}</span>
-      people living in ${placeIn()} were born in <strong>${yl}</strong> —
-      you're older than <strong>${fmtPctWhole(pct)}</strong> of people there (mid-2026, UN projection).</p>`);
+    parts.push(t.headlineCountry(alive, placeIn(), yl, t.fmtPct(pct)));
     parts.push(medianLine);
-    parts.push(`<p class="note">This counts today's residents born anywhere — people move.
-      It can even be larger than the number of babies born in ${placeIn()} in ${y},
-      so it's not a survival rate.</p>`);
+    parts.push(t.migrationCaveat(placeIn(), y));
     if (Number(row.total_alive) < SMALL_POP) {
-      parts.push(`<p class="note">Small population — estimates are noisy.</p>`);
+      parts.push(`<p class="note">${t.smallPop}</p>`);
     }
   } else {
-    parts.push(`<p class="headline"><span class="big">about ${fmtPeople(alive)}</span>
-      people alive right now were born in <strong>${yl}</strong> —
-      you're older than <strong>${fmtPctWhole(pct)}</strong> of everyone on Earth (mid-2026, UN projection).</p>`);
+    parts.push(t.headlineWorld(alive, yl, t.fmtPct(pct)));
     parts.push(medianLine);
     const anchor = populationAnchor(alive);
-    if (anchor) parts.push(`<p class="note">That's about the population of ${anchor}.</p>`);
+    if (anchor) parts.push(`<p class="note">${t.anchorLine(anchor.location_name, anchor.iso2)}</p>`);
     const births = originalCohortSize(rows, y);
     if (y >= 2025) {
       // an unfinished birth year has no completed count (folasade F5)
-      if (births != null) parts.push(`<p class="note">The UN projects about ${fmtPeople(births)} births in ${y}.</p>`);
+      if (births != null) parts.push(`<p class="note">${t.projectedBirths(births, y)}</p>`);
     } else if (births != null) {
       const share = shareStillLiving(rows, y);
-      parts.push(`<p class="note">About ${fmtPeople(alive)} of the ${fmtPeople(births)} people
-        born in ${y} are still living (${Math.round(share * 100)}%).</p>`);
+      parts.push(`<p class="note">${t.survivalLine(alive, births, y, Math.round(share * 100))}</p>`);
     } else if (y < 1950 && !row.open_ended) {
-      parts.push(`<p class="note">The UN's births series starts in 1950,
-        so there's no original-cohort figure for ${y}.</p>`);
+      parts.push(`<p class="note">${t.noBirthsSeries(y)}</p>`);
     }
   }
   if (row.open_ended) {
-    parts.push(`<p class="note">This figure counts everyone born in or before ${y} — the UN's open-ended 100-plus group.</p>`);
+    parts.push(`<p class="note">${t.openEndedNote(y)}</p>`);
   }
   el.innerHTML = parts.join('');
 
   $('share-actions').hidden = false;
   $('dotfield-section').hidden = false;
   renderDotField($('dotfield'), $('dotfield-caption'), rows, y,
-    state.iso3 ? placeName() : 'the world');
-  renderDotTable(rows, state.iso3 ? placeName() : 'the world');
+    state.iso3 ? placeName() : t.theWorld);
+  renderDotTable(rows, state.iso3 ? placeName() : t.theWorld);
 
   $('details').hidden = false;
   renderBigger(rows, y);
@@ -248,25 +247,22 @@ function renderContext(rows, y) {
   if (state.iso3) {
     const wimr = world ? findYear(world, y)?.imr : null;
     // ponytail: one world clause, only where the gap is big enough to read
-    const cmp = wimr != null && Math.abs(row.imr - wimr) >= 10
-      ? ` — worldwide it was ${Math.round(wimr)}` : '';
-    s.push(`In ${placeIn()} in ${y}, about ${Math.round(row.imr)} of every 1,000 babies did not reach their first birthday${cmp}.`);
+    const cmp = wimr != null && Math.abs(row.imr - wimr) >= 10 ? Math.round(wimr) : null;
+    s.push(t.imrCountry(placeIn(), y, Math.round(row.imr), cmp));
   } else {
-    s.push(`In ${y}, about ${Math.round(row.imr)} of every 1,000 babies worldwide did not reach their first birthday.`);
+    s.push(t.imrWorld(y, Math.round(row.imr)));
   }
-  s.push(`The median person around you was ${Math.round(row.median_age)} years old.`);
-  s.push(`The average woman had about ${Number(row.tfr).toFixed(1)} children over her lifetime.`);
+  s.push(t.medianAgeLine(Math.round(row.median_age)));
+  s.push(t.tfrLine(Number(row.tfr)));
   el.hidden = false;
-  el.innerHTML = `<h2>The ${state.iso3 ? placeName() : 'world'} you arrived in</h2>
+  el.innerHTML = `<h2>${t.contextHeading(state.iso3 ? placeName() : null)}</h2>
     <p>${s.join(' ')} <span id="climate-line"></span></p>`;
   const setClimate = () => {
     const span = $('climate-line');
     if (!span || state.year !== y) return;
     const d = climateDelta(climate, y);
     if (d == null) return;
-    span.textContent = Math.abs(d) < 0.15
-      ? `In ${y}, Earth's surface was about the same temperature as it is now.`
-      : `Earth's surface was about ${Math.abs(d).toFixed(1)}°C ${d > 0 ? 'cooler' : 'warmer'} in ${y} than it is now.`;
+    span.textContent = Math.abs(d) < 0.15 ? t.climateSame(y) : t.climateDiff(y, d);
   };
   if (climate) setClimate();
   else loadClimate().then(setClimate);
@@ -276,13 +272,14 @@ function renderContext(rows, y) {
 function renderDotTable(rows, place) {
   const details = $('dotfield-table');
   details.hidden = false;
+  details.querySelector('summary').textContent = t.viewAsTable;
   const sorted = [...rows].sort((a, b) => Number(b.birth_year) - Number(a.birth_year));
   details.querySelector('div').innerHTML = `<table>
-    <caption class="visually-hidden">People alive in mid-2026 by birth year — ${place}</caption>
-    <thead><tr><th scope="col">Born in</th><th scope="col" class="n">Alive now</th></tr></thead>
+    <caption class="visually-hidden">${t.dotTableCaption(place)}</caption>
+    <thead><tr><th scope="col">${t.thBornIn}</th><th scope="col" class="n">${t.thAliveNow}</th></tr></thead>
     <tbody>${sorted.map((r) => `<tr>
-      <td>${Number(r.birth_year)}${r.open_ended ? ' or earlier' : ''}</td>
-      <td class="n">${fmtPeople(r.alive)}</td>
+      <td>${r.open_ended ? t.orEarlier(Number(r.birth_year)) : Number(r.birth_year)}</td>
+      <td class="n">${t.fmtPeople(r.alive)}</td>
     </tr>`).join('')}</tbody>
   </table>`;
 }
@@ -294,34 +291,31 @@ function renderBigger(rows, y) {
   // company-first opener (gudrun P2-2): who shares your year, before who outnumbers it
   const worldAlive = state.iso3 && world ? cohortSizeNow(world, y) : null;
   const opener = state.iso3
-    ? `About ${fmtPeople(mine)} people in ${placeIn()} share your year${
-      worldAlive != null ? `, and about ${fmtPeople(worldAlive)} people worldwide` : ''}.`
-    : `About ${fmtPeople(mine)} people worldwide share your year.`;
+    ? t.openerCountry(mine, placeIn(), worldAlive)
+    : t.openerWorld(mine);
   if (bigger.length === 0) {
-    el.innerHTML = `<h2>Company</h2>
-      <p>${opener} No other birth year has more people alive today — ${y} is the largest cohort in ${placeIn()}.</p>`;
+    el.innerHTML = `<h2>${t.companyHeading}</h2>
+      <p>${opener} ${t.largestCohort(y, placeIn())}</p>`;
     return;
   }
   const top = bigger.slice(0, 5);
   // When the top cohorts all round to the same display value, a table of
   // identical rows reads as a bug — say it as one sentence instead.
-  const displays = new Set(top.map((b) => fmtPeople(b.alive)));
+  const displays = new Set(top.map((b) => t.fmtPeople(b.alive)));
   if (top.length >= 3 && displays.size === 1) {
     const years = top.map((b) => b.birth_year).sort();
-    el.innerHTML = `<h2>Bigger cohorts</h2>
-      <p>${opener} The largest cohorts alive today were all born between ${years[0]}
-      and ${years.at(-1)} — about ${[...displays][0]} people each, around
-      ${top[0].ratio.toFixed(1)}× your year.</p>`;
+    el.innerHTML = `<h2>${t.biggerHeading}</h2>
+      <p>${opener} ${t.biggerBand(years[0], years.at(-1), [...displays][0], top[0].ratio)}</p>`;
     return;
   }
-  el.innerHTML = `<h2>Bigger cohorts</h2>
-    <p>${opener} These birth years are larger:</p>
+  el.innerHTML = `<h2>${t.biggerHeading}</h2>
+    <p>${opener} ${t.biggerIntro}</p>
     <table>
-      <thead><tr><th scope="col">Born in</th><th scope="col" class="n">Alive now</th><th scope="col" class="n">× your year</th></tr></thead>
+      <thead><tr><th scope="col">${t.thBornIn}</th><th scope="col" class="n">${t.thAliveNow}</th><th scope="col" class="n">${t.thTimesYours}</th></tr></thead>
       <tbody>${top.map((b) => `<tr>
         <td>${b.birth_year}</td>
-        <td class="n">${fmtPeople(b.alive)}</td>
-        <td class="n">${b.ratio.toFixed(2)}×</td>
+        <td class="n">${t.fmtPeople(b.alive)}</td>
+        <td class="n">${t.ratioX(b.ratio)}</td>
       </tr>`).join('')}</tbody>
     </table>`;
 }
@@ -341,15 +335,14 @@ async function renderDetails() {
   const allRows = state.iso3 && !pool.some((r) => r.iso3 === state.iso3)
     ? [...pool, ...countryRows[state.iso3]] : pool;
   const contrast = passportContrast(allRows, y, isoList);
-  $('contrast').innerHTML = `<h2>Same year, different passport</h2>
-    <p class="caption">Cohort size and age rank by country — migration included,
-      so these are people living there now, not survivors of that birth year.</p>
+  $('contrast').innerHTML = `<h2>${t.contrastHeading}</h2>
+    <p class="caption">${t.contrastCaption}</p>
     <table>
-      <thead><tr><th scope="col">Place</th><th scope="col" class="n">Born ${y}, alive there</th><th scope="col" class="n">Older than</th></tr></thead>
+      <thead><tr><th scope="col">${t.thPlace}</th><th scope="col" class="n">${t.thBornAliveThere(y)}</th><th scope="col" class="n">${t.thOlderThan}</th></tr></thead>
       <tbody>${contrast.map((c) => `<tr${c.iso3 === state.iso3 ? ' class="you"' : ''}>
-        <td>${shortName(c.location_name)}</td>
-        <td class="n">${fmtPeople(c.alive)}</td>
-        <td class="n">${fmtPctWhole(c.percentile)}</td>
+        <td>${t.displayName(c.location_name, iso2Of(c.iso3))}</td>
+        <td class="n">${t.fmtPeople(c.alive)}</td>
+        <td class="n">${t.fmtPct(c.percentile)}</td>
       </tr>`).join('')}</tbody>
     </table>`;
 }
@@ -370,13 +363,10 @@ async function renderTrajectory() {
   const arc = traj ? cohortTrajectory(traj, y).filter((d) => d.ref_year <= REF_YEAR) : [];
   if (arc.length < 2) { trajEl.innerHTML = ''; return; }
   const x0 = arc[0].ref_year;
-  const heading = state.iso3 ? `Residents born in ${y} over time` : 'Your cohort so far';
+  const heading = state.iso3 ? t.trajHeadingCountry(y) : t.trajHeadingWorld;
   const caption = state.iso3
-    ? `People born in ${y} living in ${placeIn()}, counted in each year since ${x0} —
-       migration included, so this is people living there now, not survivors. The bars
-       underneath are the country's net migration across all ages, not just your cohort.`
-    : `People born in ${y}, counted in each year since ${x0} — solid is UN estimates,
-       dashed is the 2024–2026 projection.`;
+    ? t.trajCaptionCountry(y, placeIn(), x0)
+    : t.trajCaptionWorld(y, x0);
   // country view: aligned net-migration strip + data-driven callout, so step
   // changes in the line (Albania in the 1990s) explain themselves
   let migration = null, callout = '';
@@ -386,19 +376,17 @@ async function renderTrajectory() {
       .map((r) => ({ year: r.birth_year, net: Number(r.net_mig) }));
     const ep = migrationEpisode(rows, rows[0].total_alive);
     if (ep) {
-      const dir = ep.avg < 0 ? `left ${placeIn()} than arrived` : `arrived in ${placeIn()} than left`;
-      callout = `<p class="note">Between ${ep.start} and ${ep.end}, about
-        ${fmtPeople(Math.abs(ep.avg))} more people ${dir} each year, on average.</p>`;
+      callout = `<p class="note">${t.migCallout(ep.start, ep.end, Math.abs(ep.avg), unName(), curIso2(), ep.avg < 0)}</p>`;
     }
   }
   trajEl.innerHTML = `<h2>${heading}</h2>
     <p class="caption">${caption}</p>
     ${trajectorySVG(arc, y, migration)}
     ${callout}
-    <details class="viz-table"><summary>View as table</summary>
+    <details class="viz-table"><summary>${t.viewAsTable}</summary>
       <table>
-        <thead><tr><th scope="col">Year</th><th scope="col" class="n">Born ${y}, alive</th></tr></thead>
-        <tbody>${arc.map((d) => `<tr><td>${d.ref_year}</td><td class="n">${fmtPeople(d.alive)}</td></tr>`).join('')}</tbody>
+        <thead><tr><th scope="col">${t.thYear}</th><th scope="col" class="n">${t.thBornYearAlive(y)}</th></tr></thead>
+        <tbody>${arc.map((d) => `<tr><td>${d.ref_year}</td><td class="n">${t.fmtPeople(d.alive)}</td></tr>`).join('')}</tbody>
       </table>
     </details>`;
 }
@@ -424,7 +412,7 @@ async function render() {
     try {
       await loadCountry(state.iso3);
     } catch {
-      $('answer').innerHTML = `<p class="invite">No data for ${state.iso3}.</p>`;
+      $('answer').innerHTML = `<p class="invite">${t.noDataCountry(state.iso3)}</p>`;
       return;
     }
     renderAnswer(); // now with country rows
@@ -437,18 +425,21 @@ function syncInputs() {
   $('country').value = state.iso3 ? placeName() : '';
 }
 
+// Names a location answers to: UN name, English short name, localized name.
+function locNames(l) {
+  return [l.location_name, shortName(l.location_name), t.displayName(l.location_name, l.iso2)];
+}
+
 function findLocation(typed) {
-  const t = typed.toLowerCase();
-  return locations.find((l) => l.location_name.toLowerCase() === t
-    || shortName(l.location_name).toLowerCase() === t
-    || l.iso3.toLowerCase() === t) ?? null;
+  const s = typed.toLowerCase();
+  return locations.find((l) => l.iso3.toLowerCase() === s
+    || locNames(l).some((n) => n.toLowerCase() === s)) ?? null;
 }
 
 function suggestLocation(typed) {
-  const t = typed.toLowerCase();
-  const hit = locations.find((l) => l.location_name.toLowerCase().includes(t)
-    || shortName(l.location_name).toLowerCase().includes(t));
-  return hit ? shortName(hit.location_name) : null;
+  const s = typed.toLowerCase();
+  const hit = locations.find((l) => locNames(l).some((n) => n.toLowerCase().includes(s)));
+  return hit ? t.displayName(hit.location_name, hit.iso2) : null;
 }
 
 function setFieldError(input, errEl, msg) {
@@ -470,7 +461,7 @@ function onInput() {
     // mid-edit: keep the previous answer on screen — no teardown, no scroll
     // jump (rhea P1-3, marcus P2-12). Only a complete wrong year is an error.
     setFieldError($('year'), $('year-error'),
-      raw.length >= 4 ? `That year is outside ${MIN_YEAR}–${MAX_YEAR}.` : '');
+      raw.length >= 4 ? t.errYearOutside(MIN_YEAR, MAX_YEAR) : '');
     return;
   }
   if (!raw && state.year && document.activeElement === $('year')) {
@@ -488,8 +479,7 @@ function onInput() {
     if (!loc) {
       // explicit no-match: never silently show the world instead (marcus P0-1)
       const sug = suggestLocation(typed);
-      setFieldError($('country'), $('country-error'),
-        `No country called “${typed}”.${sug ? ` Did you mean ${sug}?` : ''}`);
+      setFieldError($('country'), $('country-error'), t.errNoCountry(typed, sug));
       return;
     }
     iso3 = loc.iso3;
@@ -513,7 +503,38 @@ function stepYear(delta) {
   onInput();
 }
 
+// --- i18n chrome: static labels + the quiet footer switcher ---
+function renderSwitcher() {
+  const labels = { en: 'English', es: 'Español', pt: 'Português' };
+  $('lang-switch').innerHTML = LANGS.map((l) => {
+    if (l === state.lang) return `<span aria-current="true">${labels[l]}</span>`;
+    const q = new URLSearchParams();
+    if (state.year) q.set('y', state.year);
+    if (state.iso3) q.set('c', state.iso3);
+    if (l !== 'en') q.set('lang', l);
+    return `<a href="${q.size ? `?${q}` : location.pathname}" hreflang="${l}" lang="${l}">${labels[l]}</a>`;
+  }).join(' · ');
+}
+
+function applyStatic() {
+  document.documentElement.lang = state.lang;
+  document.querySelector('.tag').textContent = t.tagline;
+  document.querySelector('label[for="year"]').textContent = t.yearFieldLabel;
+  $('year-hint').textContent = t.yearHint;
+  $('year-down').setAttribute('aria-label', t.prevYear);
+  $('year-up').setAttribute('aria-label', t.nextYear);
+  document.querySelector('label[for="country"]').innerHTML = t.countryLabelHtml;
+  $('country').placeholder = t.countryPlaceholder;
+  $('share').textContent = navigator.canShare ? t.shareBtnShare : t.shareBtnDownload;
+  $('foot-projection').innerHTML = t.footerProjection;
+  $('foot-source').innerHTML = t.footerSource;
+  renderSwitcher();
+  updateTitle();
+}
+
 parseURL();
+// Locale before first paint: en is already loaded; es/pt are tiny lazy chunks.
+const localeReady = setLocale(state.lang).then(applyStatic);
 
 $('year').addEventListener('input', onInput);
 $('year').addEventListener('focus', (e) => e.target.select());
@@ -532,6 +553,7 @@ $('controls').addEventListener('submit', (e) => e.preventDefault());
 window.addEventListener('popstate', () => {
   parseURL();
   syncInputs();
+  renderSwitcher();
   render();
 });
 
@@ -578,26 +600,28 @@ $('share').addEventListener('click', async () => {
     yearLabel: yearLabel(row, state.year),
     iso3: state.iso3,
     locationName: state.iso3 ? unName() : null,
+    iso2: state.iso3 ? curIso2() : null,
   });
   $('share-status').textContent = status;
 });
-if (navigator.canShare) $('share').textContent = 'Share image';
 
 // first paint: world json only; locations fill the datalist when they arrive
 fetch(import.meta.env.BASE_URL + 'data/world-now.json').then((r) => r.json()).then((rows) => {
   world = rows;
-  render();
+  localeReady.then(render);
 });
 fetch(import.meta.env.BASE_URL + 'data/locations.json').then((r) => r.json()).then((locs) => {
   locations = locs;
-  $('countries').innerHTML = locs
-    .map((l) => `<option value="${l.location_name.replace(/"/g, '&quot;')}"></option>`)
-    .join('');
-  syncInputs();
-  if (world) renderAnswer(); // pick up names + the population anchor line
+  registerIso2(locs);
+  localeReady.then(() => {
+    $('countries').innerHTML = locs
+      .map((l) => `<option value="${t.displayName(l.location_name, l.iso2).replace(/"/g, '&quot;')}"></option>`)
+      .join('');
+    syncInputs();
+    if (world) renderAnswer(); // pick up names + the population anchor line
+  });
 });
 fetch(import.meta.env.BASE_URL + 'data/meta.json').then((r) => r.json()).then((m) => {
-  $('vintage').textContent =
-    `${m.source}, ${m.variant} variant · mid-${m.ref_year} reference · build ${m.commit}`;
+  localeReady.then(() => { $('vintage').textContent = t.vintageMeta(m); });
 });
-syncInputs();
+localeReady.then(syncInputs);

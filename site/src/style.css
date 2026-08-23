@@ -210,6 +210,8 @@ tr.you td { color: var(--gold); font-weight: 650; }
 
 footer { margin-top: 64px; font-size: 0.85rem; color: var(--ink-soft); }
 footer p { margin-top: 8px; }
+.lang-switch a { color: var(--ink-soft); }
+.lang-switch span[aria-current] { color: var(--ink); }
 
 .visually-hidden {
   position: absolute; width: 1px; height: 1px;
