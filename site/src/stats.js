@@ -107,6 +107,7 @@ export function fmtPeople(n) {
   if (n >= 1e6) return `${m} million`;
   if (n >= 1e5) return (Math.round(n / 1000) * 1000).toLocaleString('en-US');
   if (n >= 1e3) return (Math.round(n / 100) * 100).toLocaleString('en-US');
+  if (n < 10) return String(Math.round(n));
   return String(Math.round(n / 10) * 10);
 }
 

@@ -527,3 +527,207 @@ source.
 *Screenshots for every view described above are in the harness at*
 `…/scratchpad/harness/shots/gudrun-*.png`*; the full visible text of the four main views is
 in* `…/scratchpad/harness/gudrun-text.json`*.*
+
+---
+
+# Re-check — 22 August 2026
+
+**Re-tested:** `/?y=1954&c=ISL`, `/?y=1954`, `/?y=1949&c=ISL`, `/?y=1949`, `/?y=1950`,
+`/?y=1954&c=VAT`, `/?y=1954&c=TUV`, the country-name error path, and the share cards
+`/og?y=1954&c=ISL` and `/og?y=1954`. iPad-sized viewport as before.
+
+> **On the server.** `localhost:8787` was serving the worker routes but returning 404 for
+> every static asset — the assets manifest had gone stale against a rebuilt `site/dist`.
+> I could not restart it, so I started my own `wrangler dev` on **8791** against the same
+> tree and tested there. Someone should bounce 8787 before the next round.
+
+## Verdict
+
+**Yes. I send it to my sister, and I do not type a warning underneath the link.**
+
+The chart is fixed — properly fixed, not softened. I scrolled into "Your cohort so far"
+watching for it and there is nothing to flinch at: the line stops at 2026, at the gold dot,
+at a number, and the only two years printed on the axis are the year I was born and this
+year. I checked every frame from a blank page to the finished picture and no future year is
+ever drawn, not for an instant. The thing I asked for is what is on the screen.
+
+What I did not expect is that the rest of the page got quieter at the same time. The
+headline now says *about* 3,400 rather than 3,412, and every figure on the page is rounded
+the same way, so the numbers stopped reading like a ledger. That was P2-1's third point and
+they applied it everywhere rather than in the one sentence I complained about, which is the
+right instinct.
+
+Two new things I would fix, neither of them a blocker. One is a formatting floor that tells
+the oldest people in the smallest places that **zero** people share their year. That one I
+would want fixed before it is shared widely, and it is a two-character change.
+
+## Per-finding
+
+### P0-1 — trajectory chart · **FIXED**
+
+Watched it render at 100ms intervals from a blank page: two states only, empty then
+finished. No dotted decline to the axis at any frame, no future year in any frame.
+
+> **YOUR COHORT SO FAR**
+> People born in 1954, counted in each year since 1954 — solid is UN estimates, dashed is
+> the 2024–2026 projection.
+> `2026 · 48.6 million`   `1954`   `2026`
+
+Measured from the rendered SVG, end of line as a fraction of the peak's height above the
+baseline:
+
+| View | Ends at | Axis labels |
+| --- | --- | --- |
+| World 1954 | 54.0% of peak | 1954 · 2026 |
+| World 1949 | 45.7% | 1950 · 2026 |
+| Iceland 1954 | 80.6% | 1954 · 2026 |
+| Iceland 1949 | 70.3% | 1950 · 2026 |
+| Tuvalu 1954 (worst case) | 14.9% | 1954 · 2026 |
+
+Nothing reaches the floor; the dashed segment is now only 2023–2026, three years at the
+end, exactly the estimate/projection distinction I said should survive. The "View as table"
+disclosure agrees — 73 rows, first `1954 · 90.1 million`, last `2026 · 48.6 million`.
+
+Two things they did that I did not ask for and am glad of. The country view is retitled
+**"Residents born in 1954 over time"** — not "your cohort" — with the caption *"migration
+included, so this is people living there now, not survivors."* An Icelandic line that dips
+is now explicitly not a line about dying. And the aria label states the finding in words:
+*"about 4,200 in 1954, about 3,400 in 2026. The last stretch, 2024 to 2026, is a UN
+projection."*
+
+FR-3 (the good fact pulled out in a sentence) was not taken up. I am not pressing it; the
+picture no longer needs rescuing.
+
+### P2-1 — world survival sentence · **FIXED**
+
+New copy, `/?y=1954`:
+
+> About 48.6 million of the 100 million people born in 1954 are still living (49%).
+
+**It lands on the company side.** The living count is the subject and comes first, the
+births figure is now context rather than the opening, and `100,187,854` has become
+`100 million` — the false precision is gone. It is my second suggested form almost exactly.
+
+The one grain left: the sentence still *ends* on the sub-half percentage, so the last thing
+in my eye is 49%. If anyone is still tinkering, dropping the parenthetical entirely loses
+nothing — the two counts already say it. Not worth reopening on its own.
+
+The 1950 boundary is closed too. `/?y=1949` now reads *"The UN's births series starts in
+1950, so there's no original-cohort figure for 1949."* — the half-sentence I asked for, in
+the app rather than only on the methods page.
+
+### P2-2 — bigger-cohorts opener · **FIXED**
+
+> **BIGGER COHORTS**
+> About 3,400 people in Iceland share your year, and about 48.6 million people worldwide.
+> These birth years are larger:
+> | Born in | Alive now | **× your year** |
+> | 1993 | 6,900 | 2.02× |
+
+Company first, ranking second, and the column header is **"× your year"** instead of
+"vs yours". "77 birth years outnumber yours" is gone entirely. This is the version I wrote
+in the original report and it reads exactly as I hoped: I am told who is with me before I am
+told who is bigger. When a year is the largest cohort the section is even retitled
+"Company", which is a nicer touch than anything I suggested.
+
+### P2-3 — share preview country name · **FIXED**
+
+> `og:title` = **Born in 1954, Iceland — 3,400 alive mid-2026 · Year Atlas**
+> `og:description` = **About 3,400 people living in Iceland were born in 1954 (mid-2026,
+> UN projection).**
+
+"ISL" is gone; the country is a place again. The Holy See correctly gets *"living in the
+Holy See"* in the description, so the article table is being used on the worker side too.
+
+### P3-1 — dot caption pluralisation · **FIXED**, but see the new finding below
+
+`/?y=1954&c=VAT`: *"One dot is **one person** alive in mid-2026…"*. Tuvalu: *"One dot is 10
+people"*. And the sentences now say *"in **the** Holy See"* throughout — headline, note and
+share card.
+
+### P3-2 — unrecognised country · **FIXED** (the sharp edge), **not** the underlying wish
+
+Typing **Ísland** now gives *"No country called "Ísland"."* with the field marked invalid,
+and — importantly — the previous answer stays on screen instead of silently becoming the
+world. The wrong-number-with-no-explanation failure is gone. That was the actual defect and
+it is closed.
+
+What has not happened is FR-4. "Ísland", "Turkiye" and "Cote d'Ivoire" all still fail to
+match, and none of them gets the "Did you mean…?" suggestion either, because the suggestion
+does an accented substring match — so the diacritic-free spellings, which are the whole
+point, fall through it. An Icelander typing their own country's name is now told politely
+that it does not exist. Better than before. Still not right.
+
+### P3-3 — reading direction · **not addressed**
+
+Still youngest on the left, caption *"Newest years on the left."* This was a suggestion, not
+a defect, and with the trajectory chart no longer pulling in the same direction the dot
+field on its own reads as honest age structure. I withdraw it.
+
+### P3-4 — copy and consistency nits · **FIXED**
+
+- The share card rank line now names the place: **"older than 91% of people in Iceland"**.
+  No dangling "there".
+- Rounding is consistent. The page, the passport table and the card all say 91% for
+  Iceland 1954; the stray 94.7% decimal is gone.
+- The card's decorative dot texture no longer thins to the right — it is a uniform scatter.
+  A field that emptied out on a card about a cohort was the wrong metaphor and it has gone.
+
+### FR-1 — the population anchor · **SHIPPED, and it works**
+
+> about 48.6 million people alive right now were born in 1954 …
+> **That's about the population of Algeria.**
+
+1949 gets Côte d'Ivoire; 1950 gets Mozambique. I checked the arithmetic against
+`locations.json`: Algeria is 48.0m against a 48.6m cohort (1.2% out), Côte d'Ivoire 33.5m
+against 33.2m (0.9%). The pool is the 60 largest countries with a ±15% tolerance and no
+aggregate rows to trip over, so it either names a real country a person has heard of or
+stays quiet. It is the line I said I would repeat out loud, and it is there.
+
+## Two new findings
+
+### N-1 (P2) — "About 0 people share your year"
+
+`/?y=1954&c=VAT` — the Holy See's 1954 cohort is 4 people, and every surface renders it as
+zero:
+
+> about **0** people living in the Holy See were born in 1954
+> About **0** people in the Holy See share your year, and about 48.6 million people worldwide.
+> `og:title` = Born in 1954, Holy See — **0** alive mid-2026 · Year Atlas
+
+The share card says "about 0" in 120-point type. The bigger-cohorts table then prints
+"4.50×" in a column comparing other years to a quantity it has just called zero.
+
+This is `fmtPeople` rounding anything under 1,000 to the nearest ten
+(`site/src/stats.js:110`), with no floor. Across `site/public/data/now/` it hits **231
+birth-year cells in 52 locations** — all of them 1 to 4 living people, all of them in the
+oldest birth years of the smallest territories. Anguilla 1929, Aruba 1928, American Samoa
+1930. In other words it fires precisely on the oldest person in the smallest place, and
+tells them the number of people who share their year is zero. On an app whose whole argument
+is that you are not alone in your year, that is the worst sentence it could produce.
+
+The percentile formatter already refuses to print 0% or 100% for exactly this reason
+(`fmtPctWhole`, `stats.js:117–122`). The people formatter wants the same floor: return
+`fewer than 10` — or the exact small integer, since at these sizes "4" is no less honest
+than "0" and vastly less bleak.
+
+### N-2 (P3) — the gold end-label is struck through by its own line
+
+On every trajectory I looked at, the `2026 · 3,400` label sits at the line's own height
+minus ten pixels, so the line runs straight through the middle of the text
+(`site/src/dots.js:121`). At my text size it is readable but it looks like something crossed
+out. Move it above the curve, or right-align it past the dot where there is empty space.
+
+## The two questions that matter to me
+
+**Would I send it to a friend my own age?** Yes, and this time without the covering note. I
+went back specifically to see whether I would still write "scroll past the graph in the
+middle" and there is no longer a graph to scroll past. The picture that ends at a gold dot
+labelled with today and a number is, if anything, the nicest thing on the page: seventy-two
+years of a group staying largely intact, and then it stops, because that is where we are.
+
+**Would I send it to someone recently widowed?** Yes. That is a different answer from the
+one I gave in June and I do not give it lightly. There is no future in this page now — no
+projected line, no year that has not happened, no number to subtract from. The copy was
+already safe; the picture has caught up with the copy. Fourteen months ago I could have
+opened this and found nothing in it that reached for me.

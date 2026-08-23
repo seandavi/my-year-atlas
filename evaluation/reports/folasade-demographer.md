@@ -494,3 +494,257 @@ data license, which would extend the same feature to 200 countries and recent co
 has a verified 1950 reconstruction. Do not ship WCDE before that answer arrives — the
 only license signal in that ecosystem is CC BY-NC on a companion paper, which is worse
 than silence.
+
+---
+---
+
+# Re-check — 22 August 2026
+
+Focused verification of F1–F12 against the rebuilt stack. Not a fresh review.
+
+**Environment note.** The shared instance on `:8787` returned `404` for every path
+except `/og` — `site/dist/` was rebuilt at 20:41 against a wrangler started at 20:40, so
+the asset manifest was stale. I could not restart a server I don't own, so I ran my own
+`wrangler dev --port 8799` from the same tree and evaluated against that. Everything
+below is from `:8799`, build `43746c2`, and the numbers reconcile to the same files.
+
+## Verdict
+
+**Yes. I would now assign this to students, and I would post the thread as a
+recommendation rather than a complaint.**
+
+The defect that ended the last evaluation is gone, and it is gone *properly* — not
+patched at the headline but routed through one shared formatter that both the site and
+the worker import, so the page, the download card, and the OG card cannot drift apart
+again. That was the actual fix, and someone did the harder version of it.
+
+I want to be precise about what changed my mind, because it was not only F1. It was that
+the trajectory chart now stops at the reference year and says "Residents born in 1979
+living in Nigeria … migration included, so this is people living there now, not
+survivors." That chart was my most serious objection after the digits, because a line
+falling across a page is an argument you cannot annotate away, and it now says what it
+is. Truncating at 2026 also disposes of F10 at the same time: there is no fifty-two-year
+point forecast left to mistake for knowledge.
+
+One thing must be fixed before anyone cites this, and it is embarrassing precisely
+because provenance is what I praised loudest last time — see **N1**. It is a two-string
+edit, not a rebuild.
+
+What I still want, in order: the per-country data-vintage line (F4), the runnable queries
+(F11), and the one honest clause on the methods straddle paragraph (F5b). None of them
+block a lecture. All three would make this the tool I teach *from* rather than the tool I
+teach *with*.
+
+## Findings
+
+| | finding | status |
+|---|---|---|
+| F1 | seven significant figures everywhere | **fixed** |
+| F2 | share card has no year/variant/source | **fixed** (variant name still absent) |
+| F3 | trajectory chart draws a closed cohort | **fixed** |
+| F4 | quality flagged by size, never by data quality | **not fixed** |
+| F5a | 2025/2026 stated as completed births | **fixed** |
+| F5b | methods straddle paragraph overclaims | **not fixed** |
+| F6 | `<title>` constant, never names the year | **partially fixed** |
+| F7 | same statistic rendered three ways | **fixed** |
+| F8 | `og:title` shows raw ISO3 | **fixed** |
+| F9 | pre-1950 births line drops silently | **fixed** |
+| F10 | 52 years of projection, no uncertainty | **fixed** (by truncation) |
+| F11 | query sketches not runnable | **not fixed** |
+| F12 | out-of-range years fail silently | **partially fixed** |
+| N1 | *new* — methods page cites the wrong build commit | **open** |
+
+### F1 — **fixed**
+
+`site/src/stats.js` and `worker/src/format.js` now both export `fmtPeople`, capped at
+three significant figures, and the copy carries "about". Verified on every surface:
+
+| surface | NGA 1979 |
+|---|---|
+| headline | `about 1.96 million` |
+| passport-contrast table | `1.96 million` |
+| bigger-cohorts table | `7.29 million`, `6.92 million` |
+| dot-field caption | `One dot is 200,000 people` |
+| downloadable canvas card | `about 1.96 million` |
+| `/og` PNG | `about 1.96 million` |
+| `og:description` | `About 1.96 million people living in Nigeria …` |
+
+The tables were the ones I expected to be missed and they were not. The world view now
+reads *"About 97.7 million of the 125 million people born in 1979 are still living
+(78%)."* — `125,000,293` is gone, and with it the sentence I was going to quote.
+
+Rounding is honest at both ends: Andorra renders `about 1,400` (stored 1,402) and the
+100-plus bucket renders `about 672,000`, so the policy is significant figures rather than
+a blanket "millions" conversion that would have destroyed the small countries.
+
+### F2 — **fixed**, with one omission
+
+`/og?y=1979&c=NGA` now carries a bottom line: `mid-2026 · UN World Population Prospects
+2024`. The canvas card carries the identical string. No "alive today" anywhere on a
+country card — it reads *"people living in Nigeria were born in 1979"*.
+
+Two residual notes, neither blocking. The card says "World Population Prospects 2024" but
+not **medium variant**, which is the word that distinguishes a scenario from a number;
+and there is still no CC BY notice on the derivative, which CC BY 3.0 IGO asks for. There
+is room on the line for both. The world card also still says "alive right now", but the
+vintage line now sits directly beneath it, so the card is self-correcting in a way it was
+not before.
+
+### F3 — **fixed**
+
+`site/src/main.js:267–272`. Country view heads the section **"Residents born in 1979 over
+time"** and captions it *"People born in 1979 living in Nigeria, counted in each year
+since 1979 — migration included, so this is people living there now, not survivors."*
+The world view keeps the old caption, correctly. Confirmed on Nigeria (falling) and the
+UAE (rising) — the caption now covers both behaviours honestly.
+
+Minor, not a finding: the section lazy-loads on intersection, so it is absent from a
+full-page screenshot taken without scrolling. Anyone printing or archiving the page loses
+the chart.
+
+### F4 — **not fixed**
+
+No per-country data-vintage line, and no methods paragraph. `grep` for
+census/heaping/register across `site/src` and `methods.html` returns only the pre-existing
+sentence *"the UN has modeled it from the most recent censuses, surveys, and vital
+registration"*. The size threshold at 90,000 is still the only quality axis, so Nigeria
+(230 million residents, last census 2006) and Japan (household registration) remain
+adjacent rows in identical type.
+
+The 3-sig-fig rounding does soften this — `1.96 million` next to `1.63 million` invites a
+far less false comparison than `1,957,713` next to `1,628,361` did — so the harm is much
+reduced. It is no longer a P1 for me. It is still the difference between a tool I use in
+a lecture and a tool I use to *teach age misreporting*, which is the better lecture.
+
+### F5 — **fixed** in the app, **not fixed** on the methods page
+
+`/?y=2026` now reads *"The UN projects about 133 million births in 2026."* The
+share-still-living line is suppressed for 2025 and 2026. Both halves of what I asked for
+— past tense removed, mismatched-window ratio withdrawn — are done.
+
+The methods straddle paragraph still closes *"it does not change the shape of any
+comparison."* Unchanged. That claim is still false where first-year mortality is
+steepest, which is exactly the region the app now (rightly) declines to compute a ratio
+for. The code learned the lesson and the prose did not. One clause fixes it.
+
+### F6 — **partially fixed**
+
+The worker emits precisely what I asked for:
+
+```
+$ curl -s "http://localhost:8799/?y=1979&c=NGA" | grep -o "<title>[^<]*</title>"
+<title>Born in 1979, Nigeria — 1.96 million alive mid-2026 · Year Atlas</title>
+```
+
+But the browser tab reads `Born in 1979 in Nigeria — Year Atlas`, because
+`site/src/main.js:83–87` unconditionally overwrites it on render:
+
+```js
+function updateTitle() {
+  document.title = state.year
+    ? `Born in ${state.year}${state.iso3 ? ` in ${placeName()}` : ''} — Year Atlas`
+    : 'Year Atlas — everyone born in your year';
+}
+```
+
+So crawlers and unfurls get the good title and every human gets the weaker one — the tab,
+the bookmark, the citation, the screenshot. Both halves of my complaint (name the cohort,
+name the vintage) are satisfied only on the surface no reader sees. The client title
+drops the count *and* `mid-2026`, which is the part that identifies the data vintage in a
+saved bookmark. Have `updateTitle()` build the same string as the worker, or delete it
+and let the server-rendered title stand.
+
+### F7 — **fixed**
+
+`1.96 million` and `88%` on the page, the canvas card, and the OG card. One formatter,
+one policy, three surfaces agreeing. The headline percentile moved from `87.6%` to `88%`,
+matching the tables — the right direction, and consistent with the argument in F1.
+
+### F8 — **fixed**
+
+`og:title` is `Born in 1979, Nigeria — 1.96 million alive mid-2026 · Year Atlas`. No
+ISO3.
+
+### F9 — **fixed**
+
+`/?y=1949`: *"The UN's births series starts in 1950, so there's no original-cohort figure
+for 1949."* Printed, as asked.
+
+### F10 — **fixed**, by the cheaper route
+
+`site/src/main.js:264` filters the arc to `ref_year <= REF_YEAR`. The chart ends at 2026
+with a `2026 · 1.96 million` endpoint label and no forward projection at all. I offered
+truncation as the cheap alternative to a variant band and I meant it; this is better than
+truncating at 2050, because it removes the point-forecast reading entirely rather than
+shortening it. The high/low band remains the more interesting feature (see feature
+request 2) but it is no longer a correction.
+
+### F11 — **not fixed**
+
+The "query sketch" column still reads `alive where iso3 = C and birth_year = Y`. No
+runnable SQL anywhere on the page. Unchanged, and still the thing I would most like to
+send a colleague.
+
+### F12 — **partially fixed** (was P3)
+
+Typing `1925` into the year field now surfaces **"That year is outside 1926–2026."** —
+the silent failure is gone on the path most people take. Navigating directly to
+`/?y=1925` still renders the bare empty state with no message. And the message does not
+carry the interesting fact I suggested (that the UN's oldest group pools everyone born in
+or before 1926). Both remainders are P3 and I am not pressing them.
+
+### N1 — *new* — the methods page cites a build commit that did not produce the figures · **P1**
+
+`/methods.html` says, twice, that the figures were produced at commit **`9609783`**:
+
+> Reference year 2026 · built from UN World Population Prospects 2024 · build commit 9609783
+> … The figures on this site were produced at commit 9609783.
+
+The live data disagrees. `site/public/data/meta.json` is
+`{"source":"UN WPP 2024","variant":"medium","ref_year":2026,"built":"2026-08-23","commit":"43746c2"}`,
+and the footer on every other page renders `build 43746c2` from it. So a reader who
+follows "How we count" is handed a commit that is not the one that built the numbers
+they just read, and the two strings are hardcoded in `site/public/methods.html` while the
+footer reads the manifest.
+
+This is the one thing on the list I would call disqualifying for *citation*, as opposed
+to teaching, and only because §12 traceability is the part of this project I hold up as
+exemplary. A provenance page that is confidently wrong about provenance is worse than one
+that says nothing. Read `meta.json` for both strings, the way the footer already does.
+
+The underlying provenance is otherwise intact — I re-verified the three sha256 checksums
+printed on the methods page against `data/raw/` and all three match byte for byte.
+
+## Spot-check: did the data path change corrupt anything?
+
+No. The build moved country data to per-ISO3 JSON under `site/public/data/now/`, so I
+checked the new file against the parquet the worker still reads:
+
+```sql
+SELECT alive, cum_alive_younger, total_alive,
+       round(100*(cum_alive_younger + 0.5*alive)/total_alive, 3) AS pctile
+FROM read_json_auto('site/public/data/now/NGA.json') WHERE birth_year = 1979;
+--  1957713 | 211420513.0 | 242431835.0 | 87.612
+
+SELECT alive, round(100*(cum_alive_younger+0.5*alive)/total_alive,3)
+FROM 'site/public/data/cohorts-now.parquet' WHERE iso3='NGA' AND birth_year=1979;
+--  1957713 | 87.612
+```
+
+Identical, and identical to what I recorded in the original review. The displayed `about
+1.96 million` and `88%` are the correct 3-sig-fig and whole-percent renderings of
+`1957713` and `87.612`. Full precision is preserved in the data files, exactly where I
+asked for it to stay.
+
+The world figures are also unchanged — `alive = 97,736,443`, `births = 125,000,293`,
+78.2% — and the closure invariant still holds: `max(alive/births)` across all birth years
+with a births figure is `0.978`. Rounding was applied at the display layer only, which is
+the correct place and was the whole point.
+
+## What I would post now
+
+> Year Atlas will tell you about 1.96 million people living in Nigeria were born in 1979,
+> and it will tell you that figure is a mid-2026 UN medium-variant projection, on the
+> page and on the card you screenshot. Its trajectory chart stops at the present and
+> admits that a country's cohort changes by migration as well as by death. I do not know
+> another tool in this genre that does either.

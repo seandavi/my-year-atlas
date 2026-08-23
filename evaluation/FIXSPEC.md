@@ -14,7 +14,8 @@ Displayed people-counts never carry more than 3 significant figures.
 | 1,000,000–9,999,999 | millions, 2 decimals | 4,297,760 → "4.3 million" (trim trailing 0) |
 | 100,000–999,999 | round to nearest 1,000, digits | 232,060 → "232,000" |
 | 1,000–99,999 | round to nearest 100, digits | 38,108 → "38,100" |
-| < 1,000 | round to nearest 10 | 847 → "850" |
+| 10–999 | round to nearest 10 | 847 → "850" |
+| 1–9 | exact integer — never display a living cohort as 0 | 4 → "4" |
 
 Prefix headline uses with "about" ("about 91.1 million people"). Locale
 digit-grouping via `toLocaleString('en-US')` for the digit forms.

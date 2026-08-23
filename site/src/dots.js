@@ -118,7 +118,7 @@ export function trajectorySVG(traj, userYear) {
     ${est.length > 1 ? `<polyline points="${pts(est)}" fill="none" stroke="var(--dot)" stroke-width="2"/>` : ''}
     ${proj.length > 1 ? `<polyline points="${pts(proj)}" fill="none" stroke="var(--dot)" stroke-width="2" stroke-dasharray="2 5" opacity="0.75"/>` : ''}
     ${now ? `<circle cx="${X(x1)}" cy="${Y(now.alive)}" r="4" fill="var(--gold)"/>
-    <text x="${Math.min(X(x1), W - 130)}" y="${Math.max(Y(now.alive) - 10, 12)}" font-size="11" font-weight="600" fill="var(--gold)">${x1} · ${fmtPeople(now.alive)}</text>` : ''}
+    <text x="${Math.min(X(x1), W - 130)}" y="${Math.max(Y(now.alive) - 16, 12)}" font-size="11" font-weight="600" fill="var(--gold)">${x1} · ${fmtPeople(now.alive)}</text>` : ''}
     ${ticks}
   </svg>`;
 }

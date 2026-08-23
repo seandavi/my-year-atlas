@@ -13,6 +13,7 @@ export function fmtPeople(n) {
   if (n >= 1e6) return `${trim((n / 1e6).toFixed(2))} million`;
   if (n >= 1e5) return (Math.round(n / 1e3) * 1e3).toLocaleString("en-US");
   if (n >= 1e3) return (Math.round(n / 100) * 100).toLocaleString("en-US");
+  if (n < 10) return String(Math.round(n));
   return String(Math.round(n / 10) * 10);
 }
 
