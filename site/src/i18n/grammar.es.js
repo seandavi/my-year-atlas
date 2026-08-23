@@ -5,12 +5,12 @@
 // display-name source (Intl.DisplayNames or fallback).
 
 const ART = {
-  US: 'los', // los Estados Unidos
+  // US: modern press usage omits the article ('en Estados Unidos' — El País, RAE-tolerated)
   GB: 'el',  // el Reino Unido
   IN: 'la',  // la India
   AE: 'los', // los Emiratos Árabes Unidos
   NL: 'los', // los Países Bajos
-  PH: 'las', // las Filipinas
+  // PH: likewise 'en Filipinas' in contemporary usage
   DO: 'la',  // la República Dominicana
   CF: 'la',  // la República Centroafricana
   CG: 'el',  // el Congo

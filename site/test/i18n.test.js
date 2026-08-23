@@ -71,7 +71,7 @@ test('pt number fixtures (FIXSPEC magnitudes, pt-BR forms)', () => {
 });
 
 test('es grammar: articles after "en"', () => {
-  assert.equal(es.placeIn('United States of America', 'US'), 'en los Estados Unidos');
+  assert.equal(es.placeIn('United States of America', 'US'), 'en Estados Unidos');
   assert.equal(es.placeIn('El Salvador', 'SV'), 'en El Salvador');
   assert.equal(es.placeIn('France', 'FR'), 'en Francia');
   assert.equal(es.placeIn('India', 'IN'), 'en la India');
