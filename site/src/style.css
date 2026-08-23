@@ -1,0 +1,145 @@
+/* Year Atlas — one idea: a night sky of people. Ink navy, one gold accent.
+   Three type sizes, 8px spacing scale, tabular figures everywhere data appears. */
+
+:root {
+  --bg: #f5f6f8;
+  --ink: #131f36;
+  --ink-soft: #4a5670;
+  --gold: #b07c1e;        /* accent, darkened for light-mode contrast */
+  --dot: #131f36;
+  --dot-dim: rgba(19, 31, 54, 0.28);
+  --line: rgba(19, 31, 54, 0.14);
+  --card: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c1322;
+    --ink: #eef1f7;
+    --ink-soft: #9aa6bd;
+    --gold: #e8b64c;
+    --dot: #e8b64c;
+    --dot-dim: rgba(232, 182, 76, 0.30);
+    --line: rgba(238, 241, 247, 0.14);
+    --card: #131c30;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 1rem/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+a { color: inherit; text-decoration-color: var(--gold); text-underline-offset: 3px; }
+a:hover { color: var(--gold); }
+
+.top { display: flex; align-items: baseline; gap: 16px; margin-bottom: 40px; flex-wrap: wrap; }
+.wordmark {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: 1.25rem;
+}
+.wordmark::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em; height: 0.55em;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-right: 0.45em;
+}
+.tag, .muted, .caption, .note { color: var(--ink-soft); }
+
+/* --- controls --- */
+#controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  align-items: center;
+  margin-bottom: 40px;
+  max-width: 28rem;
+}
+#controls label { font-size: 0.85rem; }
+#controls input {
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+  width: 100%;
+}
+#controls input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* --- answer --- */
+.invite { font-size: 1.5rem; color: var(--ink-soft); }
+.big {
+  font-size: clamp(3rem, 13vw, 6.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+#answer .lede { margin-top: 8px; font-size: 1.125rem; max-width: 36rem; }
+#answer .lede strong { color: var(--gold); font-weight: 650; }
+.note { font-size: 0.85rem; margin-top: 8px; }
+
+/* --- dot field --- */
+#dotfield-section { margin-top: 40px; }
+#dotfield { width: 100%; display: block; }
+.caption { font-size: 0.85rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
+
+/* --- detail sections --- */
+#details > div { margin-top: 48px; }
+h2 {
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+}
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 16px 8px 0; border-bottom: 1px solid var(--line); }
+th { font-weight: 650; font-size: 0.85rem; color: var(--ink-soft); }
+td.n { text-align: right; padding-right: 0; }
+th.n { text-align: right; padding-right: 0; }
+tr.you td { color: var(--gold); font-weight: 650; }
+
+#trajectory svg { width: 100%; height: auto; display: block; }
+
+.actions { margin-top: 48px; }
+button {
+  font: inherit;
+  font-weight: 650;
+  color: var(--bg);
+  background: var(--ink);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+button:hover { background: var(--gold); color: #0c1322; }
+
+footer { margin-top: 64px; font-size: 0.85rem; color: var(--ink-soft); }
+footer p { margin-top: 8px; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  clip-path: inset(50%); overflow: hidden; white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #dotfield-section:not([hidden]) #dotfield { animation: fade 0.5s ease-out; }
+  @keyframes fade { from { opacity: 0; } }
+}
