@@ -34,6 +34,6 @@ test("pt og copy: grammar + localized numbers", () => {
 
 test("es og copy: article countries", () => {
   const t = getLocale("es");
-  assert.equal(t.placeIn("United States of America", "US"), "en los Estados Unidos");
+  assert.equal(t.placeIn("United States of America", "US"), "en Estados Unidos");
   assert.match(t.ogDesc(620000, t.placeIn("Spain", "ES"), "1971"), /personas que viven en España nacieron en 1971/);
 });
