@@ -119,14 +119,14 @@ test('fmtPeople matches the FIXSPEC fixture exactly', () => {
 
 test('fmtPctWhole: whole numbers, clamped away from 0 and 100', () => {
   assert.equal(fmtPctWhole(0.833), '83%');
-  assert.equal(fmtPctWhole(0.999), 'more than 99%');
-  assert.equal(fmtPctWhole(1), 'more than 99%');
-  assert.equal(fmtPctWhole(0.001), 'less than 1%');
+  assert.equal(fmtPctWhole(0.999), '99%');
+  assert.equal(fmtPctWhole(1), '99%');
+  assert.equal(fmtPctWhole(0.001), '1%');
   assert.equal(fmtPctWhole(0.551), '55%');
 });
 
 test('fmtPctWhole never shows 100% for the 1926 open-ended bucket', () => {
   const pct = ageRankPercentile(world, 1926);
   assert.ok(pct < 1);
-  assert.equal(fmtPctWhole(pct), 'more than 99%');
+  assert.equal(fmtPctWhole(pct), '99%');
 });

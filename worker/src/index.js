@@ -3,7 +3,7 @@
 import { ImageResponse } from "workers-og";
 import { parquetReadObjects } from "hyparquet";
 import { fmtPeople, fmtPct, percentile } from "./format.js";
-import { shortName } from "./names.js";
+import { shortName, inSentence } from "./names.js";
 import fontRegular from "../assets/inter-latin-400-normal.woff";
 import fontBold from "../assets/inter-latin-700-normal.woff";
 
@@ -126,10 +126,10 @@ function cardHtml({ y, name, alive, pct, openEnded, small }) {
   const yLabel = openEnded ? `${y} or earlier` : `${y}`;
   // FIXSPEC copy templates; the vintage line carries the "when" (folasade F2).
   const sentence = name
-    ? `people living in ${esc(name)} were born in ${yLabel}`
+    ? `people living in ${esc(inSentence(name))} were born in ${yLabel}`
     : `people alive right now were born in ${yLabel}`;
   // NEVER survival/attrition on a country card (spec §4.2); rank line only.
-  const rank = name ? `older than ${pct}% of people in ${esc(name)}` : `older than ${pct}% of the world`;
+  const rank = name ? `older than ${pct}% of people in ${esc(inSentence(name))}` : `older than ${pct}% of the world`;
   const caveat = small
     ? `<div style="display:flex;font-size:30px;font-weight:400;color:${SOFT};margin-top:16px">Small population — estimates are noisy.</div>`
     : "";
@@ -178,7 +178,7 @@ async function rewriteMeta(res, url, env) {
       ? `Born in ${yLabel}, ${stat.name} — ${n} alive mid-2026 · Year Atlas`
       : `Born in ${yLabel} — ${n} alive mid-2026 · Year Atlas`;
     desc = stat.name
-      ? `About ${n} people living in ${stat.name} were born in ${yLabel} (mid-2026, UN projection).`
+      ? `About ${n} people living in ${inSentence(stat.name)} were born in ${yLabel} (mid-2026, UN projection).`
       : `About ${n} people alive right now were born in ${yLabel} (mid-2026, UN projection).`;
   } else {
     title = "Year Atlas";

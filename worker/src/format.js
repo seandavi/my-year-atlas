@@ -24,7 +24,7 @@ export function percentile(cumYounger, alive, total) {
 // Whole number, clamped: never "100%" (tereza P1-3), never "0%".
 export function fmtPct(pct) {
   const r = Math.round(pct);
-  if (r >= 100) return "more than 99";
-  if (r <= 0) return "less than 1";
+  if (r >= 100) return "99";
+  if (r <= 0) return "1";
   return String(r);
 }

@@ -112,11 +112,11 @@ export function fmtPeople(n) {
 
 /**
  * FIXSPEC percentile display: whole number, clamped so a true fraction never
- * reads as 100% or 0%. Returns the "%" with it ("83%", "more than 99%").
+ * reads as 100% or 0%. Returns the "%" with it ("83%"; clamped to "99%"/"1%").
  */
 export function fmtPctWhole(x) {
   const v = Math.round(x * 100);
-  if (v >= 100) return 'more than 99%';
-  if (v <= 0) return 'less than 1%';
+  if (v >= 100) return '99%';
+  if (v <= 0) return '1%';
   return `${v}%`;
 }

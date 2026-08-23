@@ -24,3 +24,17 @@ const SHORT = {
 };
 
 export const shortName = (unName) => SHORT[unName] || unName;
+
+// Short names that take "the" in running text ("living in the Philippines").
+// Mirrors site/src/names.js by contract.
+const THE = new Set([
+  "United States", "United Kingdom", "Netherlands", "Philippines",
+  "United Arab Emirates", "Bahamas", "Gambia", "Maldives", "Holy See",
+  "DR Congo", "Congo", "Dominican Republic", "Central African Republic",
+  "Comoros", "Marshall Islands", "Solomon Islands",
+  "Cayman Islands", "Cook Islands", "Falkland Islands (Malvinas)",
+  "Turks and Caicos Islands", "British Virgin Islands",
+  "United States Virgin Islands", "Northern Mariana Islands",
+  "Faroe Islands", "Isle of Man", "Channel Islands", "Seychelles",
+]);
+export const inSentence = (name) => (THE.has(name) ? `the ${name}` : name);

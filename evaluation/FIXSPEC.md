@@ -28,8 +28,7 @@ Fixture (assert on both sides):
 ## Percentile display
 
 `pct = 100 * (cum_alive_younger + 0.5*alive) / total_alive`, displayed as a
-whole number. Clamp: if rounding gives ≥ 100 → "more than 99"; if 0 → "less
-than 1". Never "100%". Applies to page, canvas card, OG card.
+whole number. Clamp: if rounding gives ≥ 100 → "99"; if 0 → "1". Never "100%". Applies to page, canvas card, OG card.
 
 ## Reference-year label
 
@@ -56,8 +55,7 @@ Page: keep inline "(mid-2026, UN projection)" phrasing.
   "Micronesia (Fed. States of)"→"Micronesia", "State of Palestine"→
   "Palestine", "China, Taiwan Province of China"→"Taiwan", "China, Hong Kong
   SAR"→"Hong Kong", "China, Macao SAR"→"Macao", "Côte d'Ivoire"→"Côte
-  d'Ivoire" (keep). Everything else: UN name as-is. Both sides share this
-  mapping table (duplicate it; fixture-test a sample).
+  d'Ivoire" (keep). Everything else: UN name as-is. In running text after a preposition, names in the shared THE-set take a definite article ("living in the Philippines"). Both sides duplicate the mapping + THE-set; fixture-test a sample.
 
 ## Copy templates (shared sentences)
 

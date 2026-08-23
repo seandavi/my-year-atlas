@@ -22,8 +22,8 @@ test("fmtPeople FIXSPEC fixtures", () => {
 
 test("percentile clamp — never 100%, never 0%", () => {
   // world 1926-or-earlier row: rounds to 100 without the clamp
-  assert.equal(fmtPct(percentile(8300006464, 671933, 8300678397)), "more than 99");
-  assert.equal(fmtPct(0.2), "less than 1");
+  assert.equal(fmtPct(percentile(8300006464, 671933, 8300678397)), "99");
+  assert.equal(fmtPct(0.2), "1");
   assert.equal(fmtPct(87.6), "88");
   assert.equal(fmtPct(99.4), "99");
 });
