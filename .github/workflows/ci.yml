@@ -42,32 +42,6 @@ jobs:
           unzip -o /tmp/duckdb.zip -d /usr/local/bin
       - run: ./scripts/build.sh
 
-  pages-deploy:
-    # keeps the GitHub Pages preview current on every push to main
-    needs: site
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: site/package-lock.json
-      - run: npm ci
-        working-directory: site
-      - run: npm run build -- --base=/my-year-atlas/ && touch dist/.nojekyll
-        working-directory: site
-      - name: Push to gh-pages
-        run: |
-          cd site/dist
-          git init -b gh-pages
-          git add -A
-          git -c user.email=actions@github.com -c user.name="github-actions" commit -m "Pages deploy ${GITHUB_SHA::7}"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" gh-pages
-
   deploy-production:
     # full-stack deploy to year-atlas.seandavis.net on every push to main
     needs: site

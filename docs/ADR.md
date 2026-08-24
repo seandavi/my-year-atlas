@@ -43,9 +43,9 @@ at this size. `scripts/publish.py` gets written when data outgrows the deploy.
 
 ## 8. Production on a Workers custom domain; Pages stays as untracked mirror
 Deployed 2026-08-24 to `year-atlas.seandavis.net` (the ADR-4 single-worker
-architecture, now on a custom domain). GitHub Pages continues as an
-auto-deployed static mirror for previewing — it lacks the /og endpoint and
-per-URL meta, and deliberately carries no analytics.
+architecture, now on a custom domain). The GitHub Pages mirror was
+retired the same week to avoid a confusing second URL; PR review previews
+come from Workers version uploads in CI instead.
 
 ## 9. Google Analytics on production only
 GA4 (`G-LL62WQMBHC`), maintainer-directed. Loaded only when
