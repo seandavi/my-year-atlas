@@ -99,20 +99,22 @@ export function cardFilename(data) {
  * download. Returns a status string for the role="status" region.
  */
 export async function shareImage(data) {
-  const blob = await cardBlob(data);
-  const name = cardFilename(data);
-  const file = new File([blob], name, { type: 'image/png' });
   const text = t.shareText(data.alive,
     data.locationName ? t.placeIn(data.locationName, data.iso2) : null, data.yearLabel);
-  if (navigator.canShare?.({ files: [file] })) {
+  // Share the LINK only: every URL unfurls into its own OG card server-side,
+  // so also attaching the image file made posts show two identical cards
+  // (seen on LinkedIn). Desktop (no share sheet) still downloads the image.
+  if (navigator.share) {
     try {
-      await navigator.share({ files: [file], text, url: location.href });
+      await navigator.share({ text, url: location.href });
       return t.sharedStatus;
     } catch (e) {
       if (e.name === 'AbortError') return '';
       // fall through to download
     }
   }
+  const blob = await cardBlob(data);
+  const name = cardFilename(data);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = name;
