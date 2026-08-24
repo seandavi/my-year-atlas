@@ -619,6 +619,8 @@ function applyStatic() {
   $('share').setAttribute('aria-label', shareLabel);
   $('share').setAttribute('title', shareLabel);
   updateThemeLabel();
+  $('gh-link').setAttribute('aria-label', t.footerGitHub);
+  $('gh-link').setAttribute('title', t.footerGitHub);
   $('foot-projection').innerHTML = t.footerProjection;
   $('foot-source').innerHTML = t.footerSource;
   $('foot-github').firstElementChild.textContent = t.footerGitHub;
@@ -736,5 +738,7 @@ $('theme-toggle').addEventListener('click', () => {
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem('theme', next); } catch { /* private mode */ }
   updateThemeLabel();
+  $('gh-link').setAttribute('aria-label', t.footerGitHub);
+  $('gh-link').setAttribute('title', t.footerGitHub);
   renderAnswer(); // canvas dot field reads CSS vars at draw time
 });

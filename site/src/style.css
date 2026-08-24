@@ -308,3 +308,6 @@ footer p { margin-top: 8px; }
   :root:not([data-theme]) .ic-sun { display: none; }
   :root:not([data-theme]) .ic-moon { display: inline; }
 }
+
+/* GitHub link: third header icon, leftmost of the trio */
+.gh-link { right: 96px; text-decoration: none; }
