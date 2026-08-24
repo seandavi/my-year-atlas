@@ -2,6 +2,9 @@
   "name": "year-atlas",
   "main": "src/index.js",
   "compatibility_date": "2025-06-01",
+  "routes": [
+    { "pattern": "year-atlas.seandavis.net", "custom_domain": true }
+  ],
   "assets": {
     "directory": "../site/dist",
     "binding": "ASSETS",
