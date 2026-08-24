@@ -34,7 +34,12 @@ function pushURL() {
   if (state.iso3) q.set('c', state.iso3);
   if (state.lang !== 'en') q.set('lang', state.lang);
   const url = q.size ? `?${q}` : location.pathname;
-  if (`?${q}` !== location.search) history.pushState(null, '', url);
+  if (`?${q}` !== location.search) {
+    history.pushState(null, '', url);
+    // explicit SPA page_view — GA4's history-change auto-tracking is a
+    // property-side toggle we don't control; this works regardless
+    window.gtag?.('event', 'page_view', { page_location: location.href });
+  }
   renderSwitcher(); // hrefs carry y/c — keep them current
 }
 
