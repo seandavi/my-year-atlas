@@ -7,6 +7,13 @@
   <meta name="description" content="Enter your birth year and see how many people alive on Earth right now share it. UN data, no signup.">
   <link rel="preload" href="%BASE_URL%data/world-now.json" as="fetch" crossorigin>
   <link rel="preload" href="/fonts/instrument-serif-subset.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- static fallback social meta (the worker overrides these per-URL when deployed) -->
+  <meta property="og:title" content="Year Atlas — everyone born in your year">
+  <meta property="og:description" content="Enter your birth year and see how many people alive right now share it. UN data, no signup.">
+  <meta property="og:image" content="https://seandavi.github.io/my-year-atlas/og-default.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23e8b64c'/%3E%3C/svg%3E">
   <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.dataset.theme=th}catch(e){}</script>
 </head>
