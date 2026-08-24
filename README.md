@@ -6,7 +6,8 @@ Enter your birth year (and optionally a country) and see the company you keep: h
 
 Live numbers are the UN World Population Prospects 2024 medium-variant projection for mid-2026. Full caveats live on the [methods page](site/public/methods.html) (served at `/methods.html`).
 
-**Preview:** https://seandavi.github.io/my-year-atlas/ (static; share cards need the worker deploy).
+**Live:** https://year-atlas.seandavis.net — full stack, including per-URL share-card link previews.
+**Preview mirror:** https://seandavi.github.io/my-year-atlas/ (static, auto-deployed from CI, untracked).
 
 What a year gets you: the headline cohort count and age-rank percentile, the world's median birth year, a population anchor ("that's about the population of Iran"), the year you arrived in (infant mortality, median age, fertility, how much cooler the planet was), notable people born with you (Wikidata, gender-balanced, linked), popular baby names (9 countries, each under its national open license), the signature dot field, your cohort's arc with a net-migration strip for countries, an Equal Earth map of where your year lives now, and world events of your year. Interface in English, Spanish, and Portuguese (`?lang=es|pt`).
 

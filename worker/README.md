@@ -17,8 +17,10 @@ It does two things; everything else is served straight from `../site/dist`:
 
 Percentile is `(cum_alive_younger + 0.5 * alive) / total_alive` (own bucket
 counted half, spec §6.4). Country cards never show survival/attrition
-(spec §4.2). Numbers ≥ 1M are rounded to the nearest 10,000 and rendered in
-the `91,070,000` style.
+(spec §4.2). Number formatting follows `evaluation/FIXSPEC.md` (max 3
+significant figures, "about 91.1 million" style), shared with the site via
+`../site/src/i18n/` — cards and meta localize with `&lang=es|pt`, and the
+edge-cache key includes the language.
 
 ## Dev
 
@@ -40,7 +42,11 @@ via jsdelivr), bundled as binary modules by the `rules` entry in
 npx wrangler deploy
 ```
 
-No secrets, no bindings beyond the auto-configured ASSETS static-assets
-binding. The site must be built into `../site/dist` first. Cache invalidation
+Deploys to **year-atlas.seandavis.net** (Workers custom domain, configured in
+`wrangler.jsonc`; requires the `seandavis.net` zone in the Cloudflare account
+and an API token with Workers + zone DNS permissions — kept in Google Secret
+Manager, project `cdsci-infra`: `cdsci-cloudflare-workers-token` and
+`cdsci-r2-account-id`). No other secrets, no bindings beyond the
+auto-configured ASSETS static-assets binding. The site must be built into `../site/dist` first. Cache invalidation
 after a data refresh: bump nothing — edge cache entries expire with s-maxage,
 or purge the zone cache for `/og*` in the Cloudflare dashboard.

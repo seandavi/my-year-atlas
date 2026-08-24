@@ -149,6 +149,9 @@
     <tr><td>Where your year lives (map)</td><td><code>data/cohorts-now.parquet</code> + <code>data/map.json</code></td><td><code>alive</code> per <code>iso3</code> where <code>birth_year = Y</code>, binned by powers of ten; share = <code>alive / alive(WLD)</code></td></tr>
   </table></div>
 
+  <h2 id="analytics">Analytics</h2>
+  <p>The production site uses Google Analytics for aggregate traffic counts. Analytics loads only on <code>year-atlas.seandavis.net</code> — never on preview or local copies — and nothing you type into the page (your year, your country) is sent anywhere except as part of the page URL you chose to visit. There are no accounts and no signup.</p>
+
   <h2 id="reproduce">Reproducing the build</h2>
   <p>The whole pipeline is in the open at <a href="https://github.com/seandavi/my-year-atlas">github.com/seandavi/my-year-atlas</a>. Running <code>./scripts/build.sh</code> downloads the raw files (verifying the checksums above), runs <code>scripts/build.sql</code> in DuckDB, and fails loudly if any sanity assertion trips — including the world-level check that survivors of a birth year never exceed births in that year. The figures on this site were produced at commit <code>ea7fbd1</code>.</p>
 

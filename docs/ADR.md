@@ -40,3 +40,18 @@ not morbid. Trivial to rename later; the wordmark is text.
 Derived data is ~24MB total and ships with the site deploy under long-TTL
 cache headers; a separate R2 bucket adds a moving part with no measurable win
 at this size. `scripts/publish.py` gets written when data outgrows the deploy.
+
+## 8. Production on a Workers custom domain; Pages stays as untracked mirror
+Deployed 2026-08-24 to `year-atlas.seandavis.net` (the ADR-4 single-worker
+architecture, now on a custom domain). GitHub Pages continues as an
+auto-deployed static mirror for previewing — it lacks the /og endpoint and
+per-URL meta, and deliberately carries no analytics.
+
+## 9. Google Analytics on production only
+GA4 (`G-LL62WQMBHC`), maintainer-directed. Loaded only when
+`location.hostname` is the production domain, so preview/dev traffic never
+pollutes the numbers. Tension acknowledged rather than hidden: spec §2 said
+"no analytics beyond aggregate page counts" and the site previously set no
+cookies; GA4 sets cookies. Disclosed on the methods page. A cookieless
+alternative (Cloudflare Web Analytics, GoatCounter) is a one-line swap if the
+stance reverts.

@@ -195,3 +195,13 @@ Same method, second wave. Highlights beyond the artifact list:
 - **Contract-first parallelism paid off again**: the events UI shipped
   before events.json existed (feature-detected), and the i18n agent's
   locale modules were reused verbatim by three later features.
+
+## Day 3 note (2026-08-24)
+
+Production shipped: `year-atlas.seandavis.net` (Workers custom domain — the
+one command the permission gate had held back, run on the maintainer's
+explicit direction), GA4 gated to the production hostname, static-fallback
+OG card + auto-deployed Pages mirror for the preview tier. The events
+pipeline landed after a stalled harvest was detected (69 quiet minutes) and
+recovered by messaging the agent — the monitor-the-monitors lesson of the
+project.
