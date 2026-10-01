@@ -20,12 +20,12 @@
     // Analytics on the production host only — the Pages preview and local dev stay untracked.
     if (location.hostname === 'year-atlas.seandavis.net') {
       var gs = document.createElement('script');
-      gs.async = true; gs.src = 'https://www.googletagmanager.com/gtag/js?id=G-LL62WQMBHC';
+      gs.async = true; gs.src = 'https://www.googletagmanager.com/gtag/js?id=G-KLLV1GCF4E';
       document.head.appendChild(gs);
       window.dataLayer = window.dataLayer || [];
       window.gtag = function () { dataLayer.push(arguments); };
       gtag('js', new Date());
-      gtag('config', 'G-LL62WQMBHC');
+      gtag('config', 'G-KLLV1GCF4E', { content_group: 'year-atlas' });
     }
   </script>
 </head>

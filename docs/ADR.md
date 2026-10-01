@@ -48,7 +48,7 @@ retired the same week to avoid a confusing second URL; PR review previews
 come from Workers version uploads in CI instead.
 
 ## 9. Google Analytics on production only
-GA4 (`G-LL62WQMBHC`), maintainer-directed. Loaded only when
+GA4 (`G-KLLV1GCF4E`), maintainer-directed. Loaded only when
 `location.hostname` is the production domain, so preview/dev traffic never
 pollutes the numbers. Tension acknowledged rather than hidden: spec §2 said
 "no analytics beyond aggregate page counts" and the site previously set no
